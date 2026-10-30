@@ -17,9 +17,9 @@ behance_import:
   cover_url: https://mir-s3-cdn-cf.behance.net/projects/404/a6f1d6143407619.Y3JvcCwxNjMwLDEyNzUsMTIwMiw4NzU.jpg
   cover_sha256: 41b131b179bf804e40902c719faed325a7687abc76356ccb535226ab388e3154
   details: profile-only
-  order: 17
+  order: 16
   published_on: 1652178748
-order: 17
+order: 16
 destination: auto
 visible: true
 disc_artwork: ''
