@@ -10,7 +10,7 @@ The CD carousel concept and interaction direction are inspired by [Ravi Klaassen
 
 The repository includes `.pages.yml` for the free hosted editor at [app.pagescms.org](https://app.pagescms.org/).
 
-After the repository is on GitHub:
+To connect the editor to this repository:
 
 1. Sign in to Pages CMS with the GitHub account that owns the repository.
 2. Install its GitHub App for this repository, then open the `main` branch.
@@ -69,11 +69,9 @@ To hide a work and prevent its generated page from publishing, set **both** `vis
 
 ## GitHub Pages
 
-The workflow is prepared but nothing has been pushed or published by this implementation.
+Repository: [ritika-megha/ritika-megha.github.io](https://github.com/ritika-megha/ritika-megha.github.io). The source is on `main`, and GitHub Pages is configured to deploy through the included Actions workflow. The site address is https://ritika-megha.github.io/.
 
-1. Use the GitHub repository `ritika-megha/ritika-megha.github.io` and a `main` branch, or adjust `_config.yml` and the workflow to match your actual account/branch.
-2. In **Settings → Pages**, set **Source** to **GitHub Actions**.
-3. Push the source files to `main`. Pull requests build without deploying; pushes to `main` and manually triggered runs build and deploy.
+Pages is already set to **GitHub Actions**. Saving content through Pages CMS or pushing source changes to `main` starts the build and deployment. Pull requests build without deploying. You can also start the workflow manually from the repository's **Actions** tab.
 
 For a project repository rather than an account-level site, set `baseurl` to `/repository-name` and update `url`. The templates and asset references support this prefix. Markdown body image links should include the prefix or use Liquid's `relative_url` filter.
 
@@ -87,7 +85,7 @@ To refresh after publishing work on Behance: **GitHub → Actions → Build and 
 
 Import failures produce a warning and the saved site still builds. Partial imports keep successfully processed projects. A build failure prevents committing or deploying the imported changes. Workflow repository write permission is needed to save imports; protected branches may require a different contribution workflow before enabling bot commits.
 
-**Live verification and limits:** a live dry run successfully discovered 18 projects across the public profile pages and fetched their cover assets. Individual project pages returned HTTP 403, so the importer falls back to readable profile cards for titles/covers and any public profile metadata. Existing descriptions are retained if the detail pages are blocked; new descriptions may be empty and categories may use `Selected work`. The workflow summary reports when profile-only metadata was used. After a 403 or 429, further detail-page requests are skipped for that run. The script does not bypass access controls or use an undocumented API. Behance blocking, client-only content, or markup changes can still prevent syncing. Explicit pagination is followed up to 10 pages; this is not a guaranteed full account export. Full case-study images, videos, and body layouts are not mirrored. The GitHub-hosted workflow still needs its first remote run.
+**Live verification and limits:** a live dry run successfully discovered 18 projects across the public profile pages and fetched their cover assets. Individual project pages returned HTTP 403, so the importer falls back to readable profile cards for titles/covers and any public profile metadata. Existing descriptions are retained if the detail pages are blocked; new descriptions may be empty and categories may use `Selected work`. The workflow summary reports when profile-only metadata was used. After a 403 or 429, further detail-page requests are skipped for that run. The script does not bypass access controls or use an undocumented API. Behance blocking, client-only content, or markup changes can still prevent syncing. Explicit pagination is followed up to 10 pages; this is not a guaranteed full account export. Full case-study images, videos, and body layouts are not mirrored. The GitHub-hosted workflow has completed its first successful Behance sync, build, and deployment.
 
 The actual local import has also completed successfully for those 18 projects; they are now saved in `_projects/` and `assets/images/behance/`.
 
