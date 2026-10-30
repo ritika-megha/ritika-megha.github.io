@@ -1,0 +1,35 @@
+title: Ritika Megha
+description: Ritika Megha is a multidisciplinary artist working in graphic design and exploring motion and UX, with roots in textile design.
+about: "I'm a multidisciplinary artist working in graphic design, with roots in textile design. I'm now exploring motion and UX in tech, bringing a love of color, craft, and visual storytelling into digital experiences."
+socials:
+  linkedin: https://www.linkedin.com/in/ritikamegha/
+  email: ritikamegha.vocation@gmail.com
+  x: https://x.com/ritika_megha
+url: "https://ritika-megha.github.io"
+baseurl: ""
+markdown: kramdown
+permalink: pretty
+collections:
+  projects:
+    output: true
+    permalink: /work/:name/
+defaults:
+  - scope:
+      path: ""
+      type: projects
+    values:
+      layout: project
+      destination: auto
+      visible: true
+      focal_point: "50% 50%"
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md
+  - PORTFOLIO_PLAN.md
+  - docs
+  - scripts
+  - tests
+  - bin
+  - vendor
+  - .venv

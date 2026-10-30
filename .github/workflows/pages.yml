@@ -1,0 +1,101 @@
+name: Build and deploy portfolio
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      payload:
+        description: Optional Pages CMS action context
+        type: string
+        required: false
+      sync_behance:
+        description: Fetch new and updated projects from Behance before building
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sync public Behance projects
+        id: behance
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || inputs.sync_behance)
+        continue-on-error: true
+        run: |
+          python3 -m pip install -r scripts/requirements.txt
+          python3 scripts/sync_behance.py --report /tmp/behance-sync-report.json
+      - name: Report Behance availability
+        if: steps.behance.outcome == 'failure'
+        run: |
+          echo '::warning::Behance sync was unavailable or incomplete. Building the saved portfolio; successfully imported projects, if any, are retained.'
+          echo '### Behance sync' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Import unavailable or incomplete. Saved projects remain available. See the sync step for details.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Summarize imported metadata
+        if: steps.behance.outcome == 'success' || steps.behance.outcome == 'failure'
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = Path('/tmp/behance-sync-report.json')
+          if report.exists():
+              result = json.loads(report.read_text())
+              projects = result.get('projects', [])
+              limited = sum(item.get('details') == 'profile-only' for item in projects)
+              summary = f"\nProcessed {len(projects)} project(s); {len(result.get('errors', []))} error(s).\n"
+              if limited:
+                  summary += f"{limited} project(s) used public profile metadata only. Full descriptions may be unavailable.\n"
+              with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as output:
+                  output.write(summary)
+          PY
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+      - name: Build static site
+        run: bundle exec jekyll build --strict_front_matter
+        env:
+          JEKYLL_ENV: production
+      - name: Save imported content after a successful build
+        if: github.ref == 'refs/heads/main' && (steps.behance.outcome == 'success' || steps.behance.outcome == 'failure')
+        run: |
+          git add _projects
+          if [ -d assets/images/behance ]; then
+            git add assets/images/behance
+          fi
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Sync Behance project content [skip ci]'
+          git push origin HEAD:main
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

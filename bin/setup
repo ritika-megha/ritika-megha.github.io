@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+PORTFOLIO_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+export GEM_HOME="$PORTFOLIO_ROOT/vendor/tooling"
+export GEM_PATH="$GEM_HOME"
+export GEM_SPEC_CACHE="$PORTFOLIO_ROOT/vendor/gem-specs"
+cd "$PORTFOLIO_ROOT"
+if [ ! -f "$GEM_HOME/bin/bundle" ]; then
+  gem install bundler -v 2.4.22 --no-document --install-dir "$GEM_HOME"
+fi
+exec "$PORTFOLIO_ROOT/bin/bundle" install

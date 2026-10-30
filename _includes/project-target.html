@@ -1,0 +1,2 @@
+{%- capture destination -%}{%- include project-destination.html project=include.project -%}{%- endcapture -%}
+{%- if destination == 'internal' -%}{{- include.project.url | relative_url -}}{%- else -%}{{- include.project.behance_url | strip -}}{%- endif -%}

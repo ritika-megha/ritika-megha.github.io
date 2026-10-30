@@ -1,0 +1,2 @@
+{%- assign behance_link = include.project.behance_url | default: '' | strip -%}
+{%- if include.project.destination == 'internal' or behance_link == '' -%}internal{%- else -%}external{%- endif -%}

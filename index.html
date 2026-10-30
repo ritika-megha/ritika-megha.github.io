@@ -1,0 +1,65 @@
+---
+layout: default
+body_class: portfolio
+---
+{% assign projects = site.projects | where: 'visible', true | sort: 'order' %}
+{% assign first = projects | first %}
+{% assign first_collection = first.collection_label | default: '' | strip %}
+{% capture first_destination %}{% include project-destination.html project=first %}{% endcapture %}
+<main id="main">
+  <section class="collection" aria-label="Selected portfolio projects">
+    <div class="project-info">
+      <p class="eyebrow collection-label">An ongoing collection <span aria-hidden="true">/</span> <span>{{ projects.size }} works</span></p>
+      <h1 id="project-title">{{ first.title | escape }}</h1>
+      <dl class="project-facts">
+        <div><dt>Discipline</dt><dd id="project-category">{{ first.category | escape }}</dd></div>
+        <div id="project-collection-row"{% if first_collection == '' %} hidden{% endif %}><dt>Collection</dt><dd id="project-collection">{{ first_collection | escape }}</dd></div>
+      </dl>
+      <a id="open-project" class="text-link" href="{% include project-target.html project=first %}" {% if first_destination == 'external' %}target="_blank" rel="noopener noreferrer"{% endif %}>View project <span aria-hidden="true">↗</span><span id="open-project-context" class="sr-only">{% if first_destination == 'external' %} (opens in a new tab){% endif %}</span></a>
+      {% include social-links.html %}
+    </div>
+    <div class="carousel" id="carousel" role="region" aria-roledescription="carousel" aria-label="Project discs. Drag horizontally, scroll, or use the arrow keys." tabindex="0">
+      <div class="disc-track">
+        {% for project in projects %}
+        {% assign artwork = project.disc_artwork | default: project.cover %}
+        {% capture project_destination %}{% include project-destination.html project=project %}{% endcapture %}
+        <a class="disc" href="{% include project-target.html project=project %}"
+          data-title="{{ project.title | escape }}" data-category="{{ project.category | escape }}" data-collection="{{ project.collection_label | default: '' | strip | escape }}"
+          data-destination="{{ project_destination }}" data-index="{{ forloop.index0 }}"
+          aria-label="{{ project.title | escape }}{% if project_destination == 'external' %} (opens in a new tab){% endif %}"
+          {% if project_destination == 'external' %}target="_blank" rel="noopener noreferrer"{% endif %}>
+          <span class="disc-face">
+            <img src="{{ artwork | relative_url }}" alt="{{ project.image_alt | escape }}" style="object-position: {{ project.focal_point | escape }}" width="600" height="600" draggable="false" {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
+            <span class="disc-sheen" aria-hidden="true"></span>
+          </span>
+          <span class="disc-hub" aria-hidden="true"></span>
+          <svg class="disc-outline" viewBox="0 0 400 400" fill="none" aria-hidden="true"><path d="M80 42C-18 111-14 266 70 348C160 429 306 404 364 305C418 209 388 75 287 28C219-4 132 1 80 42Z"/><path d="M322 39C402 99 423 251 343 339C269 421 119 418 47 320C-8 244 2 121 66 60"/></svg>
+          <span class="sr-only">{{ project.title | escape }}</span>
+        </a>
+        {% endfor %}
+      </div>
+      <p class="sr-only" id="carousel-status" aria-live="polite" aria-atomic="true"></p>
+    </div>
+    <footer class="collection-footer">
+      <div class="footer-note"><span class="tiny-star" aria-hidden="true">✳</span><p>Art, design &<br>a little curiosity.</p></div>
+      <div class="carousel-navigation" aria-label="Carousel controls">
+        <button id="previous-project" class="arrow-button" type="button" aria-label="Previous project">←</button>
+        <span class="project-counter"><span id="current-number">01</span><span class="counter-line" aria-hidden="true"></span><span>{{ projects.size | prepend: '0' | slice: -2, 2 }}</span></span>
+        <button id="next-project" class="arrow-button" type="button" aria-label="Next project">→</button>
+      </div>
+      <p class="drag-hint"><span aria-hidden="true">↔</span> Drag to explore</p>
+    </footer>
+  </section>
+  <noscript><style>.collection{height:auto;min-height:0;padding:30px 4.5vw}.project-info{position:static}.collection-footer{display:none}</style><p class="noscript-note">Browse all projects below. The interactive disc carousel needs JavaScript.</p></noscript>
+  <section class="project-fallback" aria-label="All projects">
+    <h2>All projects</h2>
+    <ul>{% for project in projects %}<li><a href="{% include project-target.html project=project %}">{{ project.title | escape }}</a></li>{% endfor %}</ul>
+  </section>
+</main>
+<dialog id="index-dialog" class="index-dialog">
+  <div class="dialog-heading"><span class="eyebrow">The collection / {{ projects.size }} works</span><button class="close-dialog" type="button" aria-label="Close project index">Close ×</button></div>
+  <h2>All <em>works.</em></h2>
+  <ol class="project-index">
+    {% for project in projects %}{% capture project_destination %}{% include project-destination.html project=project %}{% endcapture %}<li><a href="{% include project-target.html project=project %}" {% if project_destination == 'external' %}target="_blank" rel="noopener noreferrer"{% endif %}><span class="index-number">{{ forloop.index | prepend: '0' | slice: -2, 2 }}</span><span>{{ project.title | escape }}<small>{{ project.category | escape }}</small></span><span aria-hidden="true">↗</span><span class="sr-only">{% if project_destination == 'external' %} (opens in a new tab){% endif %}</span></a></li>{% endfor %}
+  </ol>
+</dialog>

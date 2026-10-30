@@ -1,0 +1,143 @@
+# Pages CMS: https://pagescms.org/docs/
+media:
+  input: assets/images
+  output: /assets/images
+  rename: safe
+  categories: [image]
+  extensions: [jpg, jpeg, png, webp, gif]
+
+# Preserve Behance snapshots, permalinks, and Jekyll settings outside the editor schema.
+settings:
+  content:
+    merge: true
+
+content:
+  - name: projects
+    label: Portfolio projects
+    type: collection
+    path: _projects
+    format: yaml-frontmatter
+    filename:
+      template: "{primary}.md"
+      field: create
+    view:
+      primary: title
+      fields: [title, category, collection, order, visible]
+      sort: [order, title]
+      search: [title, category, collection]
+      default:
+        sort: order
+        order: asc
+    fields:
+      - name: title
+        label: Project title
+        type: string
+        required: true
+      - name: category
+        label: Discipline
+        type: string
+        description: "For example: Graphic design / Branding."
+      - name: collection
+        label: Collection
+        type: string
+        default: Selected Work
+        description: Leave empty to hide the Collection row.
+      - name: description
+        label: Short description
+        type: text
+      - name: cover
+        label: Cover image
+        type: image
+        required: true
+        description: Used on the disc unless custom CD artwork is selected below.
+      - name: image_alt
+        label: Image description
+        type: string
+        required: true
+        description: Describe the image for visitors using a screen reader.
+      - name: disc_artwork
+        label: Custom CD artwork (optional)
+        type: image
+        description: Leave empty to use the cover image.
+      - name: focal_point
+        label: Image crop position
+        type: string
+        default: "50% 50%"
+        description: "50% 50% centers the image; 70% 50% moves the crop toward the right."
+      - name: behance_url
+        label: Behance project link (optional)
+        type: string
+        description: Leave empty to open your own case-study page instead.
+      - name: destination
+        label: Open project in
+        type: select
+        default: auto
+        options:
+          values:
+            - name: auto
+              label: Behance if linked, otherwise my own page
+            - name: internal
+              label: My own case-study page
+            - name: external
+              label: Behance
+      - name: order
+        label: Display order
+        type: number
+        default: 99
+        required: true
+        description: Lower numbers appear first. Changing this preserves your chosen order during syncs.
+      - name: visible
+        label: Show in carousel and index
+        type: boolean
+        default: true
+      - name: published
+        label: Publish project page
+        type: boolean
+        default: true
+        description: To completely unpublish, turn off both this and Show in carousel and index.
+      - name: behance_sync
+        label: Allow Behance updates for this project
+        type: boolean
+        default: true
+        description: Local edits and custom artwork are preserved. Has no effect on projects without a Behance link.
+      - name: body
+        label: Case study
+        type: rich-text
+        description: Write the content for your own project page. Choose My own case-study page above to link to it.
+
+  - name: site
+    label: About and social links
+    type: file
+    path: _config.yml
+    format: yaml
+    fields:
+      - name: title
+        label: Website title
+        type: string
+        required: true
+      - name: description
+        label: Website description
+        type: text
+      - name: about
+        label: About me
+        type: text
+      - name: socials
+        label: Social links
+        type: object
+        fields:
+          - name: linkedin
+            label: LinkedIn URL
+            type: string
+          - name: email
+            label: Contact email
+            type: string
+          - name: x
+            label: X URL
+            type: string
+
+actions:
+  - name: sync-behance
+    label: Refresh from Behance
+    workflow: pages.yml
+    ref: main
+    confirm: false

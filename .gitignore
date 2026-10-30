@@ -1,0 +1,10 @@
+_site/
+.jekyll-cache/
+.jekyll-metadata
+.bundle/
+vendor/
+.DS_Store
+.venv/
+__pycache__/
+*.pyc
+/PORTFOLIO_PLAN.md

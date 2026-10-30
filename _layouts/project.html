@@ -1,0 +1,11 @@
+---
+layout: default
+---
+<main id="main" class="case-study">
+  <a class="text-link" href="{{ '/' | relative_url }}">← Back to the collection</a>
+  <header class="case-heading"><p class="eyebrow">{{ page.category | escape }}</p><h1>{{ page.title | escape }}</h1></header>
+  {% if page.cover %}<img class="case-cover" src="{{ page.cover | relative_url }}" alt="{{ page.image_alt | default: page.title | escape }}" width="1200" height="900">{% endif %}
+  <article class="case-content">{{ content }}</article>
+  {% assign behance_link = page.behance_url | default: '' | strip %}
+  {% if behance_link != '' %}<a class="text-link" href="{{ behance_link | escape }}" target="_blank" rel="noopener noreferrer">View on Behance ↗<span class="sr-only"> (opens in a new tab)</span></a>{% endif %}
+</main>

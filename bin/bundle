@@ -1,0 +1,14 @@
+#!/bin/sh
+set -eu
+PORTFOLIO_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+export GEM_HOME="$PORTFOLIO_ROOT/vendor/tooling"
+export GEM_PATH="$GEM_HOME"
+export GEM_SPEC_CACHE="$PORTFOLIO_ROOT/vendor/gem-specs"
+export BUNDLE_PATH="$PORTFOLIO_ROOT/vendor/bundle"
+export BUNDLE_APP_CONFIG="$PORTFOLIO_ROOT/.bundle"
+cd "$PORTFOLIO_ROOT"
+if [ ! -f "$GEM_HOME/bin/bundle" ]; then
+  printf 'Run ./bin/setup first to install the local build tools.\n' >&2
+  exit 1
+fi
+exec ruby "$GEM_HOME/bin/bundle" "$@"

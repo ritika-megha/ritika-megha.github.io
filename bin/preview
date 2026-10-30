@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+PORTFOLIO_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+exec "$PORTFOLIO_ROOT/bin/bundle" exec jekyll serve --host 127.0.0.1 --port 4000 "$@"
