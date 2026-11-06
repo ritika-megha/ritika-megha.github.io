@@ -27,6 +27,63 @@
   const linkContext = document.getElementById('open-project-context');
   const number = document.getElementById('current-number');
   const status = document.getElementById('carousel-status');
+  const soundButton = document.getElementById('carousel-sound');
+  let soundEnabled = false;
+  let audioContext;
+  let tickBuffer;
+  let lastTick = -Infinity;
+  let lastSoundPosition = 0;
+  try { soundEnabled = localStorage.getItem('portfolio-sound') === 'on'; } catch (_) { /* Optional preference. */ }
+
+  function updateSoundControl() {
+    soundButton.hidden = !(window.AudioContext || window.webkitAudioContext);
+    soundButton.textContent = soundEnabled ? 'Sound on' : 'Sound off';
+    soundButton.setAttribute('aria-pressed', String(soundEnabled));
+  }
+
+  function unlockSound() {
+    if (!soundEnabled) return;
+    try {
+      const Audio = window.AudioContext || window.webkitAudioContext;
+      if (!Audio) return;
+      if (!audioContext) {
+        audioContext = new Audio();
+        tickBuffer = audioContext.createBuffer(1, Math.ceil(audioContext.sampleRate * 0.022), audioContext.sampleRate);
+        const samples = tickBuffer.getChannelData(0);
+        for (let i = 0; i < samples.length; i++) samples[i] = (Math.random() * 2 - 1) * Math.exp(-i / (samples.length * 0.18));
+      }
+      if (audioContext.state === 'suspended') audioContext.resume().catch(() => {});
+    } catch (_) { /* Browsing still works when audio is unavailable. */ }
+  }
+
+  function playTick() {
+    if (!soundEnabled || !audioContext || audioContext.state !== 'running' || document.hidden) return;
+    const now = audioContext.currentTime;
+    if (now - lastTick < 0.035) return;
+    lastTick = now;
+    const source = audioContext.createBufferSource();
+    const filter = audioContext.createBiquadFilter();
+    const gain = audioContext.createGain();
+    source.buffer = tickBuffer;
+    filter.type = 'bandpass';
+    filter.frequency.value = 1700;
+    filter.Q.value = 0.8;
+    gain.gain.value = 0.14;
+    source.connect(filter).connect(gain).connect(audioContext.destination);
+    source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); };
+    source.start(now);
+  }
+
+  soundButton.addEventListener('click', () => {
+    soundEnabled = !soundEnabled;
+    try { localStorage.setItem('portfolio-sound', soundEnabled ? 'on' : 'off'); } catch (_) { /* Optional preference. */ }
+    updateSoundControl();
+    unlockSound();
+  });
+  updateSoundControl();
+  // Audio can only start after a visitor interacts with the page.
+  document.addEventListener('pointerdown', unlockSound);
+  document.addEventListener('keydown', unlockSound);
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let position = 0;
   let target = 0;
@@ -74,6 +131,11 @@
   }
 
   function render() {
+    // Small position increments create a soft ratchet while moving either way.
+    if (Math.abs(position - lastSoundPosition) >= 0.075) {
+      playTick();
+      lastSoundPosition = position;
+    }
     const mobile = stage.clientWidth <= 600;
     const rise = mobile ? 55 : Math.min(115, stage.clientHeight * 0.2);
     discs.forEach((disc, i) => {
@@ -164,9 +226,12 @@
 
   function release(event) {
     if (!pointer || pointer.id !== event.pointerId) return;
+    // Touch starts with implicit capture on the pressed disc. Its capture-loss
+    // event bubbles when we transfer capture to the stage; the swipe is ongoing.
+    if (event.type === 'lostpointercapture' && event.target !== stage) return;
     const wasDragging = pointer.dragging;
     const recent = performance.now() - pointer.lastTime < 100;
-    const velocity = recent ? Math.max(-2, Math.min(2, pointer.velocity)) : 0;
+    const velocity = event.type === 'pointerup' && recent ? Math.max(-2, Math.min(2, pointer.velocity)) : 0;
     pointer = null;
     stage.classList.remove('is-dragging');
     if (stage.hasPointerCapture(event.pointerId)) stage.releasePointerCapture(event.pointerId);
@@ -209,6 +274,7 @@
   reducedMotion.addEventListener('change', requestRender);
   // Restore the viewed project after returning from an internal case study.
   try { target = position = clamp(Number(sessionStorage.getItem('portfolio-project')) || 0); } catch (_) { /* Storage may be unavailable. */ }
+  lastSoundPosition = position;
   window.addEventListener('pagehide', () => {
     try { sessionStorage.setItem('portfolio-project', String(selected)); } catch (_) { /* Optional persistence. */ }
   });

@@ -441,9 +441,24 @@ img {
   display:flex;
   align-items:center;
   gap:12px;
-  width:230px;
+  margin:0;
   justify-content:flex-end;
   color:var(--muted)
+}
+.carousel-tools {
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:16px
+}
+.sound-button {
+  font-size:11px;
+  font-weight:600;
+  white-space:nowrap;
+  min-height:44px;
+  padding:8px 10px;
+  border:1px solid var(--line);
+  border-radius:22px
 }
 .drag-hint>span {
   font-size:24px
@@ -716,8 +731,7 @@ body:has(dialog[open]) {
     width:35px
   }
   .drag-hint {
-    font-size:9px;
-    gap:7px
+    display:none
   }
   .drag-hint>span {
     font-size:20px

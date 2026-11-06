@@ -110,7 +110,7 @@ The About text reflects the owner's current focus: graphic design, textile roots
 
 ## Implementation choices
 
-- Finite carousel, no autoplay or sound; these remain changeable design choices.
+- Finite carousel with no autoplay. Optional soft ratchet sounds accompany movement; use **Sound off / Sound on** beside the arrows to toggle them. Sound starts off, remembers your preference, and requires a visitor interaction before playback.
 - Pointer events for mouse/touch dragging; vertical touch gestures remain available for page scrolling.
 - Wheel/trackpad navigation is limited to the carousel region and releases scrolling at its ends; browser zoom gestures are preserved.
 - Reduced motion removes easing; arrow buttons and keyboard navigation remain available.
