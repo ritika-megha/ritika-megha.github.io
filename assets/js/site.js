@@ -15,6 +15,7 @@
 
   const stage = document.getElementById('carousel');
   if (!stage) return;
+  const gestureArea = stage.closest('.collection');
   const discs = [...stage.querySelectorAll('.disc')];
   if (!discs.length) return;
   const previous = document.getElementById('previous-project');
@@ -27,22 +28,12 @@
   const linkContext = document.getElementById('open-project-context');
   const number = document.getElementById('current-number');
   const status = document.getElementById('carousel-status');
-  const soundButton = document.getElementById('carousel-sound');
-  let soundEnabled = false;
   let audioContext;
   let tickBuffer;
   let lastTick = -Infinity;
   let lastSoundPosition = 0;
-  try { soundEnabled = localStorage.getItem('portfolio-sound') === 'on'; } catch (_) { /* Optional preference. */ }
-
-  function updateSoundControl() {
-    soundButton.hidden = !(window.AudioContext || window.webkitAudioContext);
-    soundButton.textContent = soundEnabled ? 'Sound on' : 'Sound off';
-    soundButton.setAttribute('aria-pressed', String(soundEnabled));
-  }
 
   function unlockSound() {
-    if (!soundEnabled) return;
     try {
       const Audio = window.AudioContext || window.webkitAudioContext;
       if (!Audio) return;
@@ -57,7 +48,7 @@
   }
 
   function playTick() {
-    if (!soundEnabled || !audioContext || audioContext.state !== 'running' || document.hidden) return;
+    if (!audioContext || audioContext.state !== 'running' || document.hidden) return;
     const now = audioContext.currentTime;
     if (now - lastTick < 0.035) return;
     lastTick = now;
@@ -74,15 +65,10 @@
     source.start(now);
   }
 
-  soundButton.addEventListener('click', () => {
-    soundEnabled = !soundEnabled;
-    try { localStorage.setItem('portfolio-sound', soundEnabled ? 'on' : 'off'); } catch (_) { /* Optional preference. */ }
-    updateSoundControl();
-    unlockSound();
-  });
-  updateSoundControl();
-  // Audio can only start after a visitor interacts with the page.
+  // Browsers unlock audio after a visitor gesture, including touch release.
   document.addEventListener('pointerdown', unlockSound);
+  document.addEventListener('pointerup', unlockSound);
+  document.addEventListener('touchend', unlockSound, { passive: true });
   document.addEventListener('keydown', unlockSound);
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let position = 0;
@@ -196,30 +182,34 @@
     goTo(keys[event.key]);
   });
 
-  stage.addEventListener('pointerdown', event => {
+  gestureArea.addEventListener('pointerdown', event => {
     if (!event.isPrimary || event.button !== 0) return;
     clearTimeout(settleTimer);
-    pointer = { id: event.pointerId, x: event.clientX, y: event.clientY, start: position, lastX: event.clientX, lastTime: performance.now(), velocity: 0, dragging: false };
+    pointer = { id: event.pointerId, x: event.clientX, y: event.clientY, start: position, axis: event.pointerType === 'mouse' ? 'x' : null, lastDistance: 0, lastTime: performance.now(), velocity: 0, dragging: false };
     target = position;
   });
 
-  stage.addEventListener('pointermove', event => {
+  gestureArea.addEventListener('pointermove', event => {
     if (!pointer || pointer.id !== event.pointerId) return;
     const dx = event.clientX - pointer.x;
     const dy = event.clientY - pointer.y;
     if (!pointer.dragging) {
-      if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { pointer = null; goTo(position); return; }
-      if (Math.abs(dx) < 7) return;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < 7) return;
+      if (!pointer.axis) pointer.axis = Math.abs(dy) > Math.abs(dx) ? 'y' : 'x';
+      if (pointer.axis === 'x' && Math.abs(dx) < 7) return;
       pointer.dragging = true;
       stage.setPointerCapture(event.pointerId);
       stage.classList.add('is-dragging');
     }
+    // Lock to the initial dominant axis so diagonal swipes stay predictable.
+    // Swiping up or left advances; down or right returns to previous work.
+    const distance = pointer.axis === 'y' ? dy : dx;
     const time = performance.now();
-    const velocity = (event.clientX - pointer.lastX) / Math.max(1, time - pointer.lastTime);
+    const velocity = (distance - pointer.lastDistance) / Math.max(1, time - pointer.lastTime);
     pointer.velocity = pointer.velocity * 0.4 + velocity * 0.6;
-    pointer.lastX = event.clientX;
+    pointer.lastDistance = distance;
     pointer.lastTime = time;
-    position = clamp(pointer.start - dx / step);
+    position = clamp(pointer.start - distance / step);
     target = position;
     requestRender();
   });
@@ -240,11 +230,14 @@
       goTo(position - velocity * 110 / step);
     } else goTo(position);
   }
-  stage.addEventListener('pointerup', release);
-  stage.addEventListener('pointercancel', release);
-  stage.addEventListener('lostpointercapture', release);
+  gestureArea.addEventListener('pointerup', release);
+  gestureArea.addEventListener('pointercancel', release);
+  gestureArea.addEventListener('lostpointercapture', release);
   window.addEventListener('pointerup', release);
   stage.addEventListener('dragstart', event => event.preventDefault());
+  gestureArea.addEventListener('click', event => {
+    if (performance.now() < suppressClickUntil) event.preventDefault();
+  }, true);
 
   stage.addEventListener('click', event => {
     const disc = event.target.closest('.disc');
@@ -257,7 +250,7 @@
     }
   });
 
-  stage.addEventListener('wheel', event => {
+  gestureArea.addEventListener('wheel', event => {
     if (event.ctrlKey || dragging()) return;
     let delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
     if (event.deltaMode === 1) delta *= 16;

@@ -175,6 +175,9 @@ img {
   isolation:isolate;
   overflow:hidden
 }
+.has-carousel .collection {
+  touch-action:pinch-zoom
+}
 .project-info {
   position:absolute;
   top:40px;
@@ -269,7 +272,7 @@ img {
   position:absolute;
   inset:0 0 100px;
   cursor:grab;
-  touch-action:pan-y;
+  touch-action:pinch-zoom;
   user-select:none;
   -webkit-user-select:none;
   overflow:hidden
@@ -444,21 +447,6 @@ img {
   margin:0;
   justify-content:flex-end;
   color:var(--muted)
-}
-.carousel-tools {
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-  gap:16px
-}
-.sound-button {
-  font-size:11px;
-  font-weight:600;
-  white-space:nowrap;
-  min-height:44px;
-  padding:8px 10px;
-  border:1px solid var(--line);
-  border-radius:22px
 }
 .drag-hint>span {
   font-size:24px

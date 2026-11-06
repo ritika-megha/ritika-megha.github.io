@@ -18,7 +18,7 @@ body_class: portfolio
       <a id="open-project" class="text-link" href="{% include project-target.html project=first %}" {% if first_destination == 'external' %}target="_blank" rel="noopener noreferrer"{% endif %}>View project <span aria-hidden="true">↗</span><span id="open-project-context" class="sr-only">{% if first_destination == 'external' %} (opens in a new tab){% endif %}</span></a>
       {% include social-links.html %}
     </div>
-    <div class="carousel" id="carousel" role="region" aria-roledescription="carousel" aria-label="Project discs. Drag horizontally, scroll, or use the arrow keys." tabindex="0">
+    <div class="carousel" id="carousel" role="region" aria-roledescription="carousel" aria-label="Project discs. Swipe horizontally or vertically, drag, scroll, or use the arrow keys." tabindex="0">
       <div class="disc-track">
         {% for project in projects %}
         {% assign artwork = project.disc_artwork | default: project.cover %}
@@ -47,10 +47,7 @@ body_class: portfolio
         <span class="project-counter"><span id="current-number">01</span><span class="counter-line" aria-hidden="true"></span><span>{{ projects.size | prepend: '0' | slice: -2, 2 }}</span></span>
         <button id="next-project" class="arrow-button" type="button" aria-label="Next project">→</button>
       </div>
-      <div class="carousel-tools">
-        <p class="drag-hint"><span aria-hidden="true">↔</span> Drag to explore</p>
-        <button id="carousel-sound" class="sound-button" type="button" aria-label="Carousel sound" aria-pressed="false" hidden>Sound off</button>
-      </div>
+      <p class="drag-hint"><span aria-hidden="true">↔</span> Drag or swipe to explore</p>
     </footer>
   </section>
   <noscript><style>.collection{height:auto;min-height:0;padding:30px 4.5vw}.project-info{position:static}.collection-footer{display:none}</style><p class="noscript-note">Browse all projects below. The interactive disc carousel needs JavaScript.</p></noscript>

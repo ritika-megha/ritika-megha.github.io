@@ -101,7 +101,7 @@ window.AudioContext = class extends NativeAudio {
     return source;
   }
 };
-try { localStorage.removeItem('portfolio-sound'); } catch (_) {}
+try { localStorage.setItem('portfolio-sound', 'off'); } catch (_) {}
 """})
 browser.call("Page.navigate", {"url": base_url})
 browser.wait(f"window.portfolioTestBoot === {boot_token} && document.readyState === 'complete'")
@@ -195,7 +195,6 @@ for width, height in [(1024, 768), (768, 1024), (390, 844), (320, 667), (844, 39
     check(f"View project link stays accessible at {width}x{height}", "(() => {const r=document.querySelector('#open-project').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth && r.top >= 0;})()")
     check(f"Social links fit at {width}x{height}", "[...document.querySelectorAll('.project-info .social-links a')].every(a => {const r=a.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth;})")
     check(f"Theme control fits at {width}x{height}", "(() => {const r=document.querySelector('[data-theme-picker]').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth;})()")
-    check(f"Sound control fits at {width}x{height}", "(() => {const r=document.querySelector('#carousel-sound').getBoundingClientRect(), nav=document.querySelector('.carousel-navigation').getBoundingClientRect(); return r.left >= nav.right && r.right <= innerWidth && r.width >= 44 && r.height >= 44;})()")
 
 browser.call("Emulation.setDeviceMetricsOverride", {"width": 390, "height": 844, "deviceScaleFactor": 1, "mobile": True})
 browser.call("Emulation.setTouchEmulationEnabled", {"enabled": True, "maxTouchPoints": 1})
@@ -206,13 +205,7 @@ browser.wait("document.querySelector('#current-number').textContent === '01'")
 time.sleep(0.6)
 browser.evaluate("document.activeElement.blur()")
 browser.screenshot("docs/previews/mobile.png")
-check("Sound starts off without creating audio", "document.querySelector('#carousel-sound').getAttribute('aria-pressed') === 'false' && portfolioTestAudio.contexts.length === 0")
-sound_box = browser.evaluate("document.querySelector('#carousel-sound').getBoundingClientRect().toJSON()")
-sound_x, sound_y = sound_box['x'] + sound_box['width'] / 2, sound_box['y'] + sound_box['height'] / 2
-browser.mouse('mousePressed', sound_x, sound_y, 'left', 1)
-browser.mouse('mouseReleased', sound_x, sound_y, 'left')
-browser.wait("portfolioTestAudio.contexts.length === 1 && portfolioTestAudio.contexts[0].state === 'running'")
-check("Sound enables through visitor interaction", "document.querySelector('#carousel-sound').getAttribute('aria-pressed') === 'true' && localStorage.getItem('portfolio-sound') === 'on'")
+check("No sound toggle is rendered", "document.querySelector('#carousel-sound') === null")
 check("Touch regression starts on a disc", "document.elementFromPoint(270,530).closest('.disc') !== null")
 browser.call("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": 270, "y": 530}]})
 # A small first movement transfers implicit capture from the disc to the stage.
@@ -229,9 +222,8 @@ browser.wait("document.querySelector('#current-number').textContent === '02'")
 checks.append("Touch swipe advances one project")
 check("Touch release clears dragging state", "!document.querySelector('#carousel').classList.contains('is-dragging')")
 check("Swipe plays ratchet ticks", "portfolioTestAudio.ticks > 1")
-browser.click('#carousel-sound')
+browser.wait("portfolioTestAudio.contexts.length === 1 && portfolioTestAudio.contexts[0].state === 'running'")
 tick_count = browser.evaluate('portfolioTestAudio.ticks')
-check("Mute preference is saved", "document.querySelector('#carousel-sound').getAttribute('aria-pressed') === 'false' && localStorage.getItem('portfolio-sound') === 'off'")
 browser.call("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": 90, "y": 530}]})
 for x in [105, 130, 160, 190, 220, 250, 280]:
     browser.call("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": x, "y": 530 - (x - 90) * 0.25}]})
@@ -240,8 +232,18 @@ time.sleep(0.15)
 browser.call("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
 browser.wait("document.querySelector('#current-number').textContent === '01'")
 checks.append("Diagonal reverse swipe returns to previous project")
-check("Muted swipe plays no sound", f"portfolioTestAudio.ticks === {tick_count}")
-check("Vertical touch scrolling is permitted", "getComputedStyle(document.querySelector('#carousel')).touchAction === 'pan-y'")
+check("Sound stays on without a toggle or saved preference", f"portfolioTestAudio.ticks > {tick_count}")
+for label, x, start_y, end_y, expected in [('up', 360, 550, 350, '02'), ('down', 360, 400, 600, '01'), ('over project details', 180, 300, 100, '02')]:
+    page_scroll = browser.evaluate('scrollY')
+    browser.call('Input.dispatchTouchEvent', {'type': 'touchStart', 'touchPoints': [{'x': x, 'y': start_y}]})
+    for i in range(1, 13):
+        browser.call('Input.dispatchTouchEvent', {'type': 'touchMove', 'touchPoints': [{'x': x, 'y': start_y + (end_y - start_y) * i / 12}]})
+        time.sleep(0.03)
+    time.sleep(0.15)
+    browser.call('Input.dispatchTouchEvent', {'type': 'touchEnd', 'touchPoints': []})
+    browser.wait(f"document.querySelector('#current-number').textContent === '{expected}'")
+    check(f"Vertical swipe {label} moves discs without scrolling the page", f"scrollY === {page_scroll}")
+check("Pinch zoom remains permitted", "getComputedStyle(document.querySelector('#carousel')).touchAction === 'pinch-zoom'")
 
 browser.call("Emulation.setScriptExecutionDisabled", {"value": True})
 browser.call("Page.reload")

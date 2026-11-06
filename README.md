@@ -110,8 +110,8 @@ The About text reflects the owner's current focus: graphic design, textile roots
 
 ## Implementation choices
 
-- Finite carousel with no autoplay. Optional soft ratchet sounds accompany movement; use **Sound off / Sound on** beside the arrows to toggle them. Sound starts off, remembers your preference, and requires a visitor interaction before playback.
-- Pointer events for mouse/touch dragging; vertical touch gestures remain available for page scrolling.
+- Finite carousel with no autoplay. Soft ratchet sounds accompany movement by default, with no sound toggle. Browser audio rules may require a first tap, swipe, or key press before playback.
+- Horizontal dragging and horizontal or vertical touch swipes browse the carousel. Swipe up/left for the next project and down/right for the previous one. Page scrolling remains normal outside the carousel and on case-study pages; pinch zoom stays available.
 - Wheel/trackpad navigation is limited to the carousel region and releases scrolling at its ends; browser zoom gestures are preserved.
 - Reduced motion removes easing; arrow buttons and keyboard navigation remain available.
 - A project index and a no-JavaScript project list provide direct access to work.
