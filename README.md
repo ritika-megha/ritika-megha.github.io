@@ -112,7 +112,7 @@ New project filenames come from their titles, such as `_projects/surface-embelli
 
 Each imported record keeps its last source values under `behance_import`. On subsequent syncs, unchanged source-owned fields refresh; locally edited titles, categories, descriptions, or cover paths are kept. Unmodified timeline ranks refresh so new publications appear first; a manually changed `order` is preserved. Existing curated fields are kept on first adoption, while missing fields are filled. A byte-identical initial thumbnail can be adopted for future refreshes. Local changes to an imported image's bytes are also preserved. Markdown body, destination, visibility, focal point, and custom disc artwork are never overwritten. Clear a field to let the importer fill it again. Set `behance_sync: false` on a project to skip it completely. Avoid editing `behance_import` directly.
 
-The About text reflects the owner's current focus: graphic design, textile roots, and exploration of motion/UX in tech. Edit `about`, `description`, and `socials` in `_config.yml` to update the bio, Behance, LinkedIn, email, or X links. Social links have matching icons and appear on the front page and in About. The published contact email is the address supplied by the owner.
+The About text reflects the owner's current focus: graphic design, textile roots, and exploration of motion/UX in tech. Edit `about`, `description`, and `socials` in `_config.yml` to update the bio, Behance, LinkedIn, email, or X links. Social links have matching icons and appear in a dedicated footer below the discs and in About. On phones, the links sit above the carousel arrows. The published contact email is the address supplied by the owner.
 
 ## Implementation choices
 

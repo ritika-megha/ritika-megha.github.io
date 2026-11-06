@@ -273,19 +273,10 @@ img {
   height:16px;
   flex:none
 }
-.project-info .social-links {
-  display:grid;
-  grid-template-columns:repeat(2,max-content);
-  gap:4px 16px
-}
-.project-info .social-links a {
-  background:var(--paper);
-  padding:0 4px;
-  border-radius:3px
-}
 .carousel {
   position:absolute;
-  inset:0 0 100px;
+  inset:0 0 160px;
+  z-index:0;
   cursor:grab;
   touch-action:pinch-zoom;
   user-select:none;
@@ -395,11 +386,24 @@ img {
   bottom:30px;
   left:4.5vw;
   right:4.5vw;
-  display:flex;
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
   align-items:center;
   justify-content:space-between;
-  gap:24px;
-  z-index:2
+  gap:10px 24px;
+  z-index:3;
+  background:var(--paper)
+}
+.collection-footer .social-links {
+  grid-column:1 / -1;
+  justify-content:center;
+  margin:0
+}
+.collection-footer .social-links a {
+  min-height:44px
+}
+.collection-footer .drag-hint {
+  justify-self:end
 }
 .footer-note {
   display:flex;
@@ -644,7 +648,7 @@ body:has(dialog[open]) {
     top:62%
   }
   .carousel {
-    bottom:110px
+    bottom:160px
   }
   .site-header nav {
     gap:25px
@@ -688,7 +692,7 @@ body:has(dialog[open]) {
   }
   .collection {
     height:calc(100svh - 90px);
-    min-height:610px
+    min-height:560px
   }
   .project-info {
     top:24px;
@@ -716,13 +720,20 @@ body:has(dialog[open]) {
     width:clamp(235px,68vw,340px)
   }
   .carousel {
-    bottom:90px
+    bottom:190px
   }
   .collection-footer {
     bottom:24px;
     left:6vw;
     right:6vw;
-    gap:8px
+    gap:8px;
+    grid-template-columns:1fr;
+    justify-items:center
+  }
+  .collection-footer .social-links {
+    display:grid;
+    grid-template-columns:repeat(2,max-content);
+    gap:0 24px
   }
   .footer-note {
     display:none

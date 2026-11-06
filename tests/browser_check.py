@@ -111,7 +111,7 @@ project_count = browser.evaluate("document.querySelectorAll('.disc').length")
 first_project = browser.evaluate("document.querySelector('.disc').dataset.title")
 second_project = browser.evaluate("document.querySelectorAll('.disc')[1].dataset.title")
 check("All configured projects render", "document.querySelectorAll('.disc').length >= 6")
-check("Front-page social links", "document.querySelector('.project-info .social-links a[href=\"mailto:ritikamegha.vocation@gmail.com\"]') !== null")
+check("Front-page social links", "document.querySelector('.collection-footer .social-links a[href=\"mailto:ritikamegha.vocation@gmail.com\"]') !== null")
 def choose_theme(value):
     browser.evaluate(f"(() => {{const picker=document.querySelector('[data-theme-picker]'); picker.value={json.dumps(value)}; picker.dispatchEvent(new Event('change', {{bubbles:true}}));}})()")
 
@@ -193,7 +193,7 @@ for width, height in [(1024, 768), (768, 1024), (390, 844), (320, 667), (844, 39
     time.sleep(0.12)
     check(f"No horizontal page overflow at {width}x{height}", "document.documentElement.scrollWidth <= innerWidth")
     check(f"View project link stays accessible at {width}x{height}", "(() => {const r=document.querySelector('#open-project').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth && r.top >= 0;})()")
-    check(f"Social links fit at {width}x{height}", "[...document.querySelectorAll('.project-info .social-links a')].every(a => {const r=a.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth;})")
+    check(f"Social links fit at {width}x{height}", "[...document.querySelectorAll('.collection-footer .social-links a')].every(a => {const r=a.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth;})")
     check(f"Theme control fits at {width}x{height}", "(() => {const r=document.querySelector('[data-theme-picker]').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth;})()")
 
 browser.call("Emulation.setDeviceMetricsOverride", {"width": 390, "height": 844, "deviceScaleFactor": 1, "mobile": True})

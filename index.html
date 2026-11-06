@@ -16,7 +16,6 @@ body_class: portfolio
         <div id="project-collection-row"{% if first_collection == '' %} hidden{% endif %}><dt>Collection</dt><dd id="project-collection">{{ first_collection | escape }}</dd></div>
       </dl>
       <a id="open-project" class="text-link" href="{% include project-target.html project=first %}" {% if first_destination == 'external' %}target="_blank" rel="noopener noreferrer"{% endif %}>View project <span aria-hidden="true">↗</span><span id="open-project-context" class="sr-only">{% if first_destination == 'external' %} (opens in a new tab){% endif %}</span></a>
-      {% include social-links.html %}
     </div>
     <div class="carousel" id="carousel" role="region" aria-roledescription="carousel" aria-label="Project discs. Swipe horizontally or vertically, drag, scroll, or use the arrow keys." tabindex="0">
       <div class="disc-track">
@@ -41,6 +40,7 @@ body_class: portfolio
       <p class="sr-only" id="carousel-status" aria-live="polite" aria-atomic="true"></p>
     </div>
     <footer class="collection-footer">
+      {% include social-links.html %}
       <div class="footer-note"><span class="tiny-star" aria-hidden="true">✳</span><p>Art, design &<br>a little curiosity.</p></div>
       <div class="carousel-navigation" aria-label="Carousel controls">
         <button id="previous-project" class="arrow-button" type="button" aria-label="Previous project">←</button>
