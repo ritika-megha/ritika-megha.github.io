@@ -6,6 +6,7 @@ copy of the source, so the owner's project files remain untouched.
 
 import shutil
 import re
+import base64
 import subprocess
 import tempfile
 from html.parser import HTMLParser
@@ -70,7 +71,21 @@ with tempfile.TemporaryDirectory(prefix="portfolio-content-") as directory:
     text = re.sub(r'(?m)^disc_artwork:.*$', 'disc_artwork: /assets/images/projects/tiffany.png\ndestination: internal', project.read_text())
     text = re.sub(r'(?m)^collection:.*$', 'collection: "Textiles & Graphics"', text)
     text = re.sub(r'(?m)^order:.*$', 'order: 0', text)
-    project.write_text(text + "\n## Process notes\n\nAn internal case-study test fixture.\n")
+    text = text.replace('---\n', '''---
+videos:
+  - file: /assets/videos/clip.webm
+    poster: /assets/images/projects/weave.jpg
+    caption: "Motion & process"
+  - file: ""
+''', 1)
+    project.write_text(text + "\n## Process notes\n\nAn internal case-study test fixture.\n\n![Animated detail](/portfolio-check/assets/images/content/detail.gif)\n")
+    gif = source / 'assets/images/content/detail.gif'
+    gif.parent.mkdir(parents=True, exist_ok=True)
+    gif.write_bytes(base64.b64decode('R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='))
+    clip = source / 'assets/videos/clip.webm'
+    clip.parent.mkdir(parents=True, exist_ok=True)
+    # Link-only fixture: decoding/playback is verified separately in the browser.
+    clip.write_bytes(b'\x1a\x45\xdf\xa3')
     hidden = source / "_projects/vacation-vibe.md"
     hidden.write_text(re.sub(r'(?m)^order:.*$', 'visible: false\npublished: false\norder: 5', hidden.read_text()))
     for index, behance_field in enumerate(("", 'behance_url: ""\n', 'behance_url: "   "\ndestination: external\n')):
@@ -98,6 +113,16 @@ with tempfile.TemporaryDirectory(prefix="portfolio-content-") as directory:
     original_href = discs[1]['href'].removeprefix('/portfolio-check')
     assert images[1]["src"] == "/portfolio-check" + main_covers[original_href], "Thumbnail default failed."
     assert "An internal case-study test fixture." in (output / "work/sculpture/index.html").read_text()
+    case_page = Page(output / 'work/sculpture/index.html')
+    videos = [attrs for tag, attrs in case_page.tags if tag == 'video']
+    assert len(videos) == 1, 'Missing video or empty video record rendered.'
+    video = videos[0]
+    assert video['src'] == '/portfolio-check/assets/videos/clip.webm'
+    assert video['poster'] == '/portfolio-check/assets/images/projects/weave.jpg'
+    assert video['aria-label'] == 'Motion & process'
+    assert 'controls' in video and 'playsinline' in video and 'autoplay' not in video
+    assert video['preload'] == 'metadata'
+    assert (output / 'assets/images/content/detail.gif').read_bytes() == gif.read_bytes(), 'GIF was transformed.'
     assert not (output / "work/vacation-vibe/index.html").exists(), "Unpublished project generated a public page."
     for index in range(3):
         url = f'/portfolio-check/work/custom-{index}/'

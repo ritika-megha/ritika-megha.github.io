@@ -606,6 +606,21 @@ body:has(dialog[open]) {
 .case-content img {
   height:auto
 }
+.case-video {
+  margin:32px 0
+}
+.case-video video {
+  display:block;
+  width:100%;
+  height:auto;
+  max-height:75svh;
+  background:var(--surface)
+}
+.case-video figcaption {
+  margin-top:10px;
+  font-size:13px;
+  color:var(--muted)
+}
 .case-content a {
   text-decoration:underline
 }

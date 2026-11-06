@@ -7,6 +7,13 @@ media:
     rename: safe
     categories: [image]
     extensions: [jpg, jpeg, png, webp, gif]
+  - name: videos
+    label: Project videos
+    input: assets/videos
+    output: /assets/videos
+    rename: safe
+    categories: [video]
+    extensions: [mp4, webm]
 
 # Preserve Behance snapshots, permalinks, and Jekyll settings outside the editor schema.
 settings:
@@ -105,7 +112,7 @@ content:
       - name: body
         label: Case study
         type: rich-text
-        description: Write text and insert images using the editor's image button. Upload or choose an image, then add descriptive alt text. Choose My own case-study page above to display this content.
+        description: Write text and insert images or animated GIFs using the image button. Add videos in the Videos section below. Choose My own case-study page above to display this content.
         options:
           format: markdown
           media: images
@@ -113,6 +120,31 @@ content:
           extensions: [jpg, jpeg, png, webp, gif]
           rename: safe
           switcher: true
+      - name: videos
+        label: Videos
+        type: object
+        list: true
+        description: Add MP4 or WebM videos. They appear below the written case study, in this order, with playback controls.
+        fields:
+          - name: file
+            label: Video file
+            type: file
+            required: true
+            options:
+              media: videos
+              path: assets/videos
+              extensions: [mp4, webm]
+              categories: [video]
+              rename: safe
+          - name: poster
+            label: Thumbnail (optional)
+            type: image
+            options:
+              media: images
+          - name: caption
+            label: Caption / video description
+            type: string
+            description: Describe what the video shows. This also labels the player for screen readers.
 
   - name: site
     label: About and social links

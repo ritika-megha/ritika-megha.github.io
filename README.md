@@ -28,6 +28,12 @@ Open **Portfolio projects**, choose your project, set **Open project in** to **M
 
 New content images default to `assets/images/content/`. If using **Source** mode, an image can also be inserted as `![Description of the image](/assets/images/content/your-image.jpg)` after uploading it through the media library. Reload Pages CMS after a configuration update so the editor picks up the image settings.
 
+### Add GIFs and videos
+
+Animated GIFs use the same image button in **Case study → Editor** and can sit between paragraphs. Upload the original `.gif`; it stays animated on the published page.
+
+For videos, open the project's **Videos** section and add an item. Upload an MP4 or WebM file, optionally choose a thumbnail and add a caption describing the clip, then save. Video players appear below the written case study in the order listed, with playback controls and inline playback on phones. Files are stored in `assets/videos/`. MP4 encoded with H.264 is a good choice for broad browser support. The rich-text image button handles images/GIFs; use **Videos** for video uploads.
+
 `PORTFOLIO_PLAN.md` is local planning context, excluded from both Git and the published website.
 
 ## Local preview
