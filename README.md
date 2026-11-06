@@ -22,6 +22,12 @@ The **Refresh from Behance** action starts the import-and-deploy workflow. It is
 
 Merge mode is enabled so edits preserve importer snapshots, explicit permalinks, and technical Jekyll settings that are not shown as form fields. Existing filenames stay stable when editing titles. Preview images and custom artwork can be uploaded through the media picker. To unpublish a project completely, turn off both **Show in carousel and index** and **Publish project page**.
 
+### Add images within a custom page
+
+Open **Portfolio projects**, choose your project, set **Open project in** to **My own case-study page**, and scroll down to **Case study**. In **Editor** mode, place the cursor where the image belongs and use the image button to upload a file or select one from **Project images**. Add descriptive alternative text, then save the project. Images can be placed between paragraphs; they are separate from the cover and CD artwork.
+
+New content images default to `assets/images/content/`. If using **Source** mode, an image can also be inserted as `![Description of the image](/assets/images/content/your-image.jpg)` after uploading it through the media library. Reload Pages CMS after a configuration update so the editor picks up the image settings.
+
 `PORTFOLIO_PLAN.md` is local planning context, excluded from both Git and the published website.
 
 ## Local preview

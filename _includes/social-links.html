@@ -1,6 +1,6 @@
 <nav class="social-links" aria-label="Social links">
-  {% if include.show_behance %}<a href="{{ site.socials.behance | escape }}" target="_blank" rel="noopener noreferrer">{% include social-icon.html name='behance' %} Behance <span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a>{% endif %}
+  <a href="{{ site.socials.behance | escape }}" target="_blank" rel="noopener noreferrer">{% include social-icon.html name='behance' %} Behance <span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a>
   <a href="{{ site.socials.linkedin | escape }}" target="_blank" rel="noopener noreferrer">{% include social-icon.html name='linkedin' %} LinkedIn <span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a>
-  <a href="mailto:{{ site.socials.email | escape }}">{% include social-icon.html name='email' %} Email <span aria-hidden="true">↗</span></a>
   <a href="{{ site.socials.x | escape }}" target="_blank" rel="noopener noreferrer">{% include social-icon.html name='x' %} X <span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a>
+  <a href="mailto:{{ site.socials.email | escape }}">{% include social-icon.html name='email' %} Email <span aria-hidden="true">↗</span></a>
 </nav>

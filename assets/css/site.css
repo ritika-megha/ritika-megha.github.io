@@ -273,6 +273,16 @@ img {
   height:16px;
   flex:none
 }
+.project-info .social-links {
+  display:grid;
+  grid-template-columns:repeat(2,max-content);
+  gap:4px 16px
+}
+.project-info .social-links a {
+  background:var(--paper);
+  padding:0 4px;
+  border-radius:3px
+}
 .carousel {
   position:absolute;
   inset:0 0 100px;

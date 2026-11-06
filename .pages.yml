@@ -1,10 +1,12 @@
 # Pages CMS: https://pagescms.org/docs/
 media:
-  input: assets/images
-  output: /assets/images
-  rename: safe
-  categories: [image]
-  extensions: [jpg, jpeg, png, webp, gif]
+  - name: images
+    label: Project images
+    input: assets/images
+    output: /assets/images
+    rename: safe
+    categories: [image]
+    extensions: [jpg, jpeg, png, webp, gif]
 
 # Preserve Behance snapshots, permalinks, and Jekyll settings outside the editor schema.
 settings:
@@ -103,7 +105,14 @@ content:
       - name: body
         label: Case study
         type: rich-text
-        description: Write the content for your own project page. Choose My own case-study page above to link to it.
+        description: Write text and insert images using the editor's image button. Upload or choose an image, then add descriptive alt text. Choose My own case-study page above to display this content.
+        options:
+          format: markdown
+          media: images
+          path: assets/images/content
+          extensions: [jpg, jpeg, png, webp, gif]
+          rename: safe
+          switcher: true
 
   - name: site
     label: About and social links
@@ -131,11 +140,11 @@ content:
           - name: linkedin
             label: LinkedIn URL
             type: string
-          - name: email
-            label: Contact email
-            type: string
           - name: x
             label: X URL
+            type: string
+          - name: email
+            label: Contact email
             type: string
 
 actions:
