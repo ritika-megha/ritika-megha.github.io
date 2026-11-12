@@ -113,12 +113,22 @@ second_project = browser.evaluate("document.querySelectorAll('.disc')[1].dataset
 check("All configured projects render", "document.querySelectorAll('.disc').length >= 6")
 check("Front-page social links", "document.querySelector('.collection-footer .social-links a[href=\"mailto:ritikamegha.vocation@gmail.com\"]') !== null")
 def choose_theme(value):
-    browser.evaluate(f"(() => {{const picker=document.querySelector('[data-theme-picker]'); picker.value={json.dumps(value)}; picker.dispatchEvent(new Event('change', {{bubbles:true}}));}})()")
+    if value == 'auto':
+        browser.evaluate("localStorage.removeItem('portfolio-theme'); window.dispatchEvent(new StorageEvent('storage', {key:'portfolio-theme', newValue:null}));")
+    else:
+        if browser.evaluate(f"document.documentElement.dataset.theme === {json.dumps(value)}"):
+            browser.click('[data-theme-toggle]')
+        browser.click('[data-theme-toggle]')
+
+
+def navigate(direction):
+    browser.evaluate("document.querySelector('#carousel').focus()")
+    browser.call('Input.dispatchKeyEvent', {'type':'keyDown', 'key':direction, 'code':direction})
 
 choose_theme('auto')
 browser.call('Emulation.setEmulatedMedia', {'features': [{'name': 'prefers-color-scheme', 'value': 'dark'}]})
 browser.wait("document.documentElement.dataset.theme === 'dark'")
-check('Auto theme follows dark device setting', "document.querySelector('[data-theme-picker]').value === 'auto'")
+check('Auto theme follows dark device setting', "document.documentElement.dataset.themePreference === 'auto'")
 browser.screenshot('docs/previews/desktop-dark.png')
 choose_theme('light')
 check('Light choice overrides dark device setting', "document.documentElement.dataset.theme === 'light'")
@@ -126,7 +136,7 @@ choose_theme('dark')
 browser.call('Page.reload')
 time.sleep(0.25)
 browser.wait("document.readyState === 'complete' && document.body.classList.contains('has-carousel')")
-check('Dark preference persists after reload', "document.documentElement.dataset.theme === 'dark' && document.querySelector('[data-theme-picker]').value === 'dark'")
+check('Dark preference persists after reload', "document.documentElement.dataset.theme === 'dark' && document.documentElement.dataset.themePreference === 'dark'")
 browser.call('Emulation.setEmulatedMedia', {'features': [{'name': 'prefers-color-scheme', 'value': 'light'}]})
 check('Explicit dark choice ignores device changes', "document.documentElement.dataset.theme === 'dark'")
 choose_theme('auto')
@@ -134,11 +144,17 @@ browser.wait("document.documentElement.dataset.theme === 'light'")
 check('Auto theme follows light device setting', "getComputedStyle(document.documentElement).colorScheme === 'light'")
 check('Small metadata is semibold', "Number(getComputedStyle(document.querySelector('.project-facts')).fontWeight) >= 600")
 check("Initial selection matches configured project order", f"document.querySelector('#project-title').textContent === {json.dumps(first_project)}")
-check("Previous disabled at start", "document.querySelector('#previous-project').disabled")
+check("No visible arrow buttons or drag hint", "!document.querySelector('#previous-project, #next-project, .drag-hint')")
+check("About stays beside the wordmark and aligns with the table", "(() => {const logo=document.querySelector('.wordmark').getBoundingClientRect(), about=document.querySelector('[data-dialog=about-dialog]').getBoundingClientRect(), table=document.querySelector('.project-facts').getBoundingClientRect();return about.left > logo.right && Math.abs(about.right-table.right)<1;})()")
+check("Footer is anchored bottom-right in the requested order", "(() => {const footer=document.querySelector('.collection-footer'), r=footer.getBoundingClientRect();return getComputedStyle(footer).position === 'absolute' && Math.abs(innerHeight-r.bottom-28)<1 && footer.children[0].classList.contains('collection-controls') && footer.children[1].classList.contains('social-links') && footer.children[2].classList.contains('footer-note');})()")
+check("Footer has no opaque background", "getComputedStyle(document.querySelector('.collection-footer')).backgroundColor === 'rgba(0, 0, 0, 0)'")
+check("Discs use the full canvas height", "document.querySelector('#carousel').getBoundingClientRect().height === document.querySelector('.collection').getBoundingClientRect().height")
 check("Selected destination matches project configuration", "(() => {const disc=document.querySelector('.disc[aria-current]'), link=document.querySelector('#open-project'); return link.href === disc.href && (disc.dataset.destination === 'internal' ? !link.hasAttribute('target') : link.target === '_blank');})()")
 browser.screenshot("docs/previews/desktop.png")
 
-browser.click("#next-project")
+navigate("ArrowRight")
+time.sleep(0.08)
+check("Discs gently wobble during movement", "Math.abs(Number(document.querySelector('.disc').style.transform.match(/rotateX\\(([-.\\d]+)deg/)[1]) - 12) > 0.01")
 browser.wait("document.querySelector('#current-number').textContent === '02'")
 check("Next updates project metadata", f"document.querySelector('#project-title').textContent === {json.dumps(second_project)}")
 pages_before = {item['targetId'] for item in browser.call('Target.getTargets')['targetInfos'] if item['type'] == 'page'}
@@ -166,7 +182,9 @@ checks.append("Wheel advances carousel")
 
 browser.call("Input.dispatchKeyEvent", {"type": "keyDown", "key": "End", "code": "End"})
 browser.wait(f"Number(document.querySelector('#current-number').textContent) === {project_count}")
-check("Next disabled at end", "document.querySelector('#next-project').disabled")
+navigate("ArrowRight")
+time.sleep(0.15)
+check("Navigation stays at final project", f"Number(document.querySelector('#current-number').textContent) === {project_count}")
 if browser.evaluate("document.querySelector('.disc[href$=\"/work/testpage/\"]') !== null"):
     custom_index = browser.evaluate("Number(document.querySelector('.disc[href$=\"/work/testpage/\"]').dataset.index)")
     browser.click('.disc[href$="/work/testpage/"]')
@@ -184,9 +202,10 @@ check("About opens", "document.querySelector('#about-dialog').open")
 browser.click("#about-dialog .close-dialog")
 
 browser.call("Emulation.setEmulatedMedia", {"features": [{"name": "prefers-reduced-motion", "value": "reduce"}]})
-browser.click("#previous-project")
+navigate("ArrowLeft")
 browser.wait(f"Number(document.querySelector('#current-number').textContent) === {project_count - 1}")
 checks.append("Reduced-motion navigation")
+check("Reduced motion disables wobble", "document.querySelector('.disc').style.transform.includes('rotateX(12deg)') && document.querySelector('.disc').style.transform.includes('translateZ(0px)')")
 
 for width, height in [(1024, 768), (768, 1024), (390, 844), (320, 667), (844, 390)]:
     browser.call("Emulation.setDeviceMetricsOverride", {"width": width, "height": height, "deviceScaleFactor": 1, "mobile": width <= 600})
@@ -194,7 +213,7 @@ for width, height in [(1024, 768), (768, 1024), (390, 844), (320, 667), (844, 39
     check(f"No horizontal page overflow at {width}x{height}", "document.documentElement.scrollWidth <= innerWidth")
     check(f"View project link stays accessible at {width}x{height}", "(() => {const r=document.querySelector('#open-project').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth && r.top >= 0;})()")
     check(f"Social links fit at {width}x{height}", "[...document.querySelectorAll('.collection-footer .social-links a')].every(a => {const r=a.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth;})")
-    check(f"Theme control fits at {width}x{height}", "(() => {const r=document.querySelector('[data-theme-picker]').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth;})()")
+    check(f"Theme control fits at {width}x{height}", "(() => {const r=document.querySelector('[data-theme-toggle]').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight;})()")
 
 browser.call("Emulation.setDeviceMetricsOverride", {"width": 390, "height": 844, "deviceScaleFactor": 1, "mobile": True})
 browser.call("Emulation.setTouchEmulationEnabled", {"enabled": True, "maxTouchPoints": 1})

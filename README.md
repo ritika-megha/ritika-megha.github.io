@@ -1,6 +1,6 @@
 # Ritika Megha — portfolio
 
-A Jekyll portfolio inspired by a collection of CDs. Drag, swipe, scroll, use the arrow keys/buttons, or click a neighboring disc to center it. Click the centered disc or **View project** to open the work. **Index** provides direct links to every project.
+A Jekyll portfolio inspired by a collection of CDs. Drag, swipe, scroll, use the arrow keys, or click a neighboring disc to center it. Click the centered disc or **View project** to open the work. **Index** provides direct links to every project.
 
 ## Inspiration and credit
 
@@ -71,7 +71,7 @@ Generated Behance covers use the project filename followed by a content hash, fo
 
 ### Appearance
 
-The header's **Auto / Light / Dark** selector is available on the homepage and internal pages. Auto follows the device's color scheme and reacts to changes. An explicit choice is remembered in this browser across reloads and page navigation. If browser storage is unavailable, the choice still applies to the current page. The default is Auto; artwork colors are preserved in all modes. Small navigation, metadata, caption, social, and counter text uses stronger weight and contrast.
+The sun/moon button switches between light and dark themes. Before an explicit choice, the site follows the device's color scheme and reacts to device changes. A chosen theme is remembered across reloads and page navigation; if storage is unavailable, it still applies for the current page. Artwork colors stay unchanged. The homepage button sits in the bottom-right controls; internal pages keep it beside About.
 
 ### Internal case studies
 
@@ -118,14 +118,14 @@ New project filenames come from their titles, such as `_projects/surface-embelli
 
 Each imported record keeps its last source values under `behance_import`. On subsequent syncs, unchanged source-owned fields refresh; locally edited titles, categories, descriptions, or cover paths are kept. Unmodified timeline ranks refresh so new publications appear first; a manually changed `order` is preserved. Existing curated fields are kept on first adoption, while missing fields are filled. A byte-identical initial thumbnail can be adopted for future refreshes. Local changes to an imported image's bytes are also preserved. Markdown body, destination, visibility, focal point, and custom disc artwork are never overwritten. Clear a field to let the importer fill it again. Set `behance_sync: false` on a project to skip it completely. Avoid editing `behance_import` directly.
 
-The About text reflects the owner's current focus: graphic design, textile roots, and exploration of motion/UX in tech. Edit `about`, `description`, and `socials` in `_config.yml` to update the bio, Behance, LinkedIn, email, or X links. Social links have matching icons and appear in a dedicated footer below the discs and in About. On phones, the links sit above the carousel arrows. The published contact email is the address supplied by the owner.
+The About text reflects the owner's current focus: graphic design, textile roots, and exploration of motion/UX in tech. Edit `about`, `description`, and `socials` in `_config.yml` to update the bio, Behance, LinkedIn, email, or X links. Social links have matching icons and appear in the transparent bottom-right corner and in About. The corner stacks Selected work/Index/theme first, socials next, and the tagline last. About sits beside the wordmark at the top-left; neither corner reserves a full-width band over the discs. The published contact email is the address supplied by the owner.
 
 ## Implementation choices
 
 - Finite carousel with no autoplay. Soft ratchet sounds accompany movement by default, with no sound toggle. Browser audio rules may require a first tap, swipe, or key press before playback.
 - Horizontal dragging and horizontal or vertical touch swipes browse the carousel. Swipe up/left for the next project and down/right for the previous one. Page scrolling remains normal outside the carousel and on case-study pages; pinch zoom stays available.
 - Wheel/trackpad navigation is limited to the carousel region and releases scrolling at its ends; browser zoom gestures are preserved.
-- Reduced motion removes easing; arrow buttons and keyboard navigation remain available.
+- Discs have wider spacing with a gentle forward/back depth tilt that settles to rest. Hover adds an opposing depth tilt to the hovered disc, then eases back on exit. Reduced motion removes easing and wobble. Keyboard arrow navigation and neighbor click-to-center remain available; visible arrows and drag instructions are omitted.
 - A project index and a no-JavaScript project list provide direct access to work.
 - Returning from an internal page restores the viewed project for the current tab where session storage is available.
 

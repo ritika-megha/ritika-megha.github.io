@@ -40,14 +40,14 @@ body_class: portfolio
       <p class="sr-only" id="carousel-status" aria-live="polite" aria-atomic="true"></p>
     </div>
     <footer class="collection-footer">
+      <nav class="collection-controls" aria-label="Portfolio navigation">
+        <a class="nav-work" href="{{ '/' | relative_url }}" aria-current="page">Selected work</a>
+        <button type="button" data-dialog="index-dialog">Index</button>
+        {% include theme-toggle.html %}
+      </nav>
       {% include social-links.html %}
       <div class="footer-note"><span class="tiny-star" aria-hidden="true">✳</span><p>Art, design &<br>a little curiosity.</p></div>
-      <div class="carousel-navigation" aria-label="Carousel controls">
-        <button id="previous-project" class="arrow-button" type="button" aria-label="Previous project">←</button>
-        <span class="project-counter"><span id="current-number">01</span><span class="counter-line" aria-hidden="true"></span><span>{{ projects.size | prepend: '0' | slice: -2, 2 }}</span></span>
-        <button id="next-project" class="arrow-button" type="button" aria-label="Next project">→</button>
-      </div>
-      <p class="drag-hint"><span aria-hidden="true">↔</span> Drag or swipe to explore</p>
+      <span id="current-number" class="sr-only">01</span>
     </footer>
   </section>
   <noscript><style>.collection{height:auto;min-height:0;padding:30px 4.5vw}.project-info{position:static}.collection-footer{display:none}</style><p class="noscript-note">Browse all projects below. The interactive disc carousel needs JavaScript.</p></noscript>

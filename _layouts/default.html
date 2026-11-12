@@ -16,10 +16,8 @@
   <header class="site-header">
     <a class="wordmark" href="{{ '/' | relative_url }}" aria-label="Ritika Megha, home">ritika<span>megha</span><span class="wordmark-star" aria-hidden="true">✳</span></a>
     <nav aria-label="Main navigation">
-      <a class="nav-work" href="{{ '/' | relative_url }}" {% if page.body_class == 'portfolio' %}aria-current="page"{% endif %}>Selected work<span class="nav-dot" aria-hidden="true"></span></a>
       <button type="button" data-dialog="about-dialog">About</button>
-      {% if page.body_class == 'portfolio' %}<button type="button" data-dialog="index-dialog">Index <span aria-hidden="true">↗</span></button>{% endif %}
-      <label class="theme-control"><span class="sr-only">Color theme</span><select data-theme-picker aria-label="Color theme"><option value="auto">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+      {% unless page.body_class == 'portfolio' %}{% include theme-toggle.html %}{% endunless %}
     </nav>
   </header>
   {{ content }}

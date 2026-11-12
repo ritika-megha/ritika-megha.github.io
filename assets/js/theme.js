@@ -12,14 +12,17 @@
     root.dataset.themePreference = preference;
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.content = theme === 'dark' ? '#1b1d19' : '#f4f3ee';
-    document.querySelectorAll('[data-theme-picker]').forEach(picker => { picker.value = preference; });
+    document.querySelectorAll('[data-theme-toggle]').forEach(button => {
+      button.setAttribute('aria-label', `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`);
+      button.title = `${theme === 'dark' ? 'Dark' : 'Light'} theme. Click to switch.`;
+    });
   }
 
   apply();
   document.addEventListener('DOMContentLoaded', apply);
-  document.addEventListener('change', event => {
-    if (!event.target.matches('[data-theme-picker]')) return;
-    preference = valid(event.target.value);
+  document.addEventListener('click', event => {
+    if (!event.target.closest('[data-theme-toggle]')) return;
+    preference = root.dataset.theme === 'dark' ? 'light' : 'dark';
     try { localStorage.setItem('portfolio-theme', preference); } catch (_) { /* Choice still applies for this page. */ }
     apply();
   });

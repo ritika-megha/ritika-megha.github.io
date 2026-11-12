@@ -18,8 +18,6 @@
   const gestureArea = stage.closest('.collection');
   const discs = [...stage.querySelectorAll('.disc')];
   if (!discs.length) return;
-  const previous = document.getElementById('previous-project');
-  const next = document.getElementById('next-project');
   const title = document.getElementById('project-title');
   const category = document.getElementById('project-category');
   const collection = document.getElementById('project-collection');
@@ -81,6 +79,24 @@
   let announcementTimer;
   let pointer = null;
   let suppressClickUntil = 0;
+  let swing = 0;
+  let swingVelocity = 0;
+  let renderedPosition = 0;
+  let lastMovementDirection = 1;
+  const hoverMotion = discs.map(() => ({ tilt: 0, velocity: 0, target: 0 }));
+
+  discs.forEach((disc, index) => {
+    disc.addEventListener('pointerenter', event => {
+      if (event.pointerType !== 'mouse' || event.buttons || dragging() || reducedMotion.matches) return;
+      // Hover leans against the last scroll direction, on this disc only.
+      hoverMotion[index].target = -9 * lastMovementDirection;
+      requestRender();
+    });
+    disc.addEventListener('pointerleave', () => {
+      hoverMotion[index].target = 0;
+      requestRender();
+    });
+  });
 
   const clamp = value => Math.max(0, Math.min(discs.length - 1, value));
   const dragging = () => pointer && pointer.dragging;
@@ -104,8 +120,6 @@
       linkContext.textContent = ' (opens in a new tab)';
     }
     number.textContent = String(index + 1).padStart(2, '0');
-    previous.disabled = index === 0;
-    next.disabled = index === discs.length - 1;
     discs.forEach((item, i) => {
       if (i === index) item.setAttribute('aria-current', 'true');
       else item.removeAttribute('aria-current');
@@ -128,7 +142,8 @@
       const offset = i - position;
       const visible = Math.abs(offset) < 3.2;
       const scale = Math.max(0.38, Math.min(1.45, Math.pow(1.23, offset)));
-      disc.style.transform = `translate(-50%, -50%) translate(${offset * step}px, ${-offset * rise}px) scale(${scale}) perspective(1100px) rotateY(-24deg) rotateX(12deg) rotateZ(20deg)`;
+      const tilt = swing * Math.cos(offset * 0.65) + hoverMotion[i].tilt;
+      disc.style.transform = `translate(-50%, -50%) translate(${offset * step}px, ${-offset * rise}px) scale(${scale}) perspective(1100px) translateZ(${tilt * 4}px) rotateY(${-24 + tilt * 0.8}deg) rotateX(${12 + tilt * 1.2}deg) rotateZ(20deg)`;
       disc.style.zIndex = String(i + 1);
       disc.style.visibility = visible ? 'visible' : 'hidden';
       disc.style.pointerEvents = visible ? 'auto' : 'none';
@@ -146,8 +161,30 @@
       position = reducedMotion.matches ? target : position + (target - position) * (1 - Math.exp(-elapsed / 85));
       if (Math.abs(target - position) < 0.001) position = target;
     }
+    if (reducedMotion.matches) {
+      swing = swingVelocity = 0;
+      hoverMotion.forEach(motion => { motion.tilt = motion.velocity = motion.target = 0; });
+    } else {
+      // A damped spring responds to movement, then comes to rest (no idle sway).
+      const dt = elapsed / 1000;
+      const travel = position - renderedPosition;
+      if (Math.abs(travel) > 0.0001) lastMovementDirection = Math.sign(travel);
+      swingVelocity += travel * 190;
+      swingVelocity += (-55 * swing - 7 * swingVelocity) * dt;
+      swing = Math.max(-12, Math.min(12, swing + swingVelocity * dt));
+      if (Math.abs(swing) < 0.015 && Math.abs(swingVelocity) < 0.04) swing = swingVelocity = 0;
+      hoverMotion.forEach(motion => {
+        motion.velocity += (65 * (motion.target - motion.tilt) - 9 * motion.velocity) * dt;
+        motion.tilt += motion.velocity * dt;
+        if (Math.abs(motion.target - motion.tilt) < 0.015 && Math.abs(motion.velocity) < 0.04) {
+          motion.tilt = motion.target;
+          motion.velocity = 0;
+        }
+      });
+    }
+    renderedPosition = position;
     render();
-    if (!dragging() && position !== target) frame = requestAnimationFrame(animate);
+    if ((!dragging() && position !== target) || swing !== 0 || swingVelocity !== 0 || hoverMotion.some(motion => motion.tilt !== motion.target || motion.velocity !== 0)) frame = requestAnimationFrame(animate);
     else lastFrameTime = 0;
   }
 
@@ -167,12 +204,9 @@
 
   function measure() {
     const size = discs[0].offsetWidth;
-    step = size * (stage.clientWidth <= 600 ? 0.73 : 0.69);
+    step = size * (stage.clientWidth <= 600 ? 0.93 : 0.88);
     requestRender();
   }
-
-  previous.addEventListener('click', () => goTo(Math.round(target) - 1));
-  next.addEventListener('click', () => goTo(Math.round(target) + 1));
 
   stage.addEventListener('keydown', event => {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
@@ -185,6 +219,7 @@
   gestureArea.addEventListener('pointerdown', event => {
     if (!event.isPrimary || event.button !== 0) return;
     clearTimeout(settleTimer);
+    hoverMotion.forEach(motion => { motion.target = 0; });
     pointer = { id: event.pointerId, x: event.clientX, y: event.clientY, start: position, axis: event.pointerType === 'mouse' ? 'x' : null, lastDistance: 0, lastTime: performance.now(), velocity: 0, dragging: false };
     target = position;
   });
@@ -267,7 +302,7 @@
   reducedMotion.addEventListener('change', requestRender);
   // Restore the viewed project after returning from an internal case study.
   try { target = position = clamp(Number(sessionStorage.getItem('portfolio-project')) || 0); } catch (_) { /* Storage may be unavailable. */ }
-  lastSoundPosition = position;
+  lastSoundPosition = renderedPosition = position;
   window.addEventListener('pagehide', () => {
     try { sessionStorage.setItem('portfolio-project', String(selected)); } catch (_) { /* Optional persistence. */ }
   });
