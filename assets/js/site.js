@@ -75,8 +75,15 @@
   let step = 260;
   let frame = 0;
   let lastFrameTime = 0;
-  let settleTimer;
+  let settlingDuration = 85;
+  let wheelGesture = null;
+  let wheelEndTimer;
   let announcementTimer;
+  let textTimer;
+  let textVersion = 0;
+  let displayedSelection = -1;
+  let textCandidate = -1;
+  let textAnimations = [];
   let pointer = null;
   let suppressClickUntil = 0;
   let swing = 0;
@@ -86,6 +93,8 @@
   const hoverMotion = discs.map(() => ({ tilt: 0, velocity: 0, target: 0 }));
 
   discs.forEach((disc, index) => {
+    // Keep native link-drag behavior from stealing pointer capture mid-gesture.
+    disc.draggable = false;
     disc.addEventListener('pointerenter', event => {
       if (event.pointerType !== 'mouse' || event.buttons || dragging() || reducedMotion.matches) return;
       // Hover leans against the last scroll direction, on this disc only.
@@ -101,9 +110,16 @@
   const clamp = value => Math.max(0, Math.min(discs.length - 1, value));
   const dragging = () => pointer && pointer.dragging;
 
-  function updateSelection(index) {
-    if (index === selected) return;
-    selected = index;
+  function cancelTextTransition() {
+    clearTimeout(textTimer);
+    textVersion++;
+    textCandidate = -1;
+    textAnimations.forEach(animation => animation.cancel());
+    textAnimations = [];
+  }
+
+  function applyProjectText(index) {
+    displayedSelection = index;
     const disc = discs[index];
     title.textContent = disc.dataset.title;
     category.textContent = disc.dataset.category;
@@ -120,14 +136,57 @@
       linkContext.textContent = ' (opens in a new tab)';
     }
     number.textContent = String(index + 1).padStart(2, '0');
-    discs.forEach((item, i) => {
-      if (i === index) item.setAttribute('aria-current', 'true');
-      else item.removeAttribute('aria-current');
-    });
     clearTimeout(announcementTimer);
     announcementTimer = setTimeout(() => {
       status.textContent = `${index + 1} of ${discs.length}: ${disc.dataset.title}`;
     }, 220);
+  }
+
+  function updateSelection(index) {
+    if (index !== selected) {
+      selected = index;
+      cancelTextTransition();
+      clearTimeout(announcementTimer);
+      discs.forEach((item, i) => {
+        if (i === index) item.setAttribute('aria-current', 'true');
+        else item.removeAttribute('aria-current');
+      });
+    }
+    if (displayedSelection < 0 || reducedMotion.matches || !title.animate) {
+      if (textCandidate !== -1) cancelTextTransition();
+      if (displayedSelection !== index) applyProjectText(index);
+      return;
+    }
+    const settled = !dragging() && !(wheelGesture && wheelGesture.active) && Math.abs(position - index) < 0.05 && Math.abs(target - index) < 0.001;
+    if (!settled) {
+      if (textCandidate !== -1) cancelTextTransition();
+      return;
+    }
+    if (displayedSelection === index || textCandidate === index) return;
+    textCandidate = index;
+    const version = ++textVersion;
+    // Coalesce fast browsing; only the final settled project's text animates.
+    textTimer = setTimeout(async () => {
+      const elements = [title, category, collection];
+      textAnimations = elements.map((element, i) => element.animate([
+        { opacity: 1, transform: 'translateY(0)' },
+        { opacity: 0, transform: 'translateY(-8px)' }
+      ], { duration: i ? 200 : 250, delay: i ? 50 : 0, easing: 'ease-in', fill: 'forwards' }));
+      await Promise.allSettled(textAnimations.map(animation => animation.finished));
+      if (version !== textVersion) return;
+      // Update text and its destination together, while the text is hidden.
+      applyProjectText(index);
+      textAnimations.forEach(animation => animation.cancel());
+      textAnimations = elements.map((element, i) => element.animate([
+        { opacity: 0, transform: 'translateY(10px)' },
+        { opacity: 1, transform: 'translateY(0)' }
+      ], { duration: 600, delay: i ? 150 : 0, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'both' }));
+      await Promise.allSettled(textAnimations.map(animation => animation.finished));
+      if (version !== textVersion) return;
+      textAnimations.forEach(animation => animation.cancel());
+      textAnimations = [];
+      textCandidate = -1;
+    }, 60);
   }
 
   function render() {
@@ -158,7 +217,7 @@
     const elapsed = lastFrameTime ? Math.min(time - lastFrameTime, 50) : 16;
     lastFrameTime = time;
     if (!dragging()) {
-      position = reducedMotion.matches ? target : position + (target - position) * (1 - Math.exp(-elapsed / 85));
+      position = reducedMotion.matches ? target : position + (target - position) * (1 - Math.exp(-elapsed / settlingDuration));
       if (Math.abs(target - position) < 0.001) position = target;
     }
     if (reducedMotion.matches) {
@@ -192,8 +251,14 @@
     if (!frame) frame = requestAnimationFrame(animate);
   }
 
-  function goTo(index) {
-    clearTimeout(settleTimer);
+  function resetWheelGesture() {
+    clearTimeout(wheelEndTimer);
+    wheelGesture = null;
+  }
+
+  function goTo(index, duration = 85, fromWheel = false) {
+    if (!fromWheel) resetWheelGesture();
+    settlingDuration = duration;
     // Keep keyboard controls usable when the previously focused disc moves offscreen.
     if (document.activeElement && document.activeElement.classList.contains('disc')) {
       stage.focus({ preventScroll: true });
@@ -218,14 +283,18 @@
 
   gestureArea.addEventListener('pointerdown', event => {
     if (!event.isPrimary || event.button !== 0) return;
-    clearTimeout(settleTimer);
+    resetWheelGesture();
     hoverMotion.forEach(motion => { motion.target = 0; });
-    pointer = { id: event.pointerId, x: event.clientX, y: event.clientY, start: position, axis: event.pointerType === 'mouse' ? 'x' : null, lastDistance: 0, lastTime: performance.now(), velocity: 0, dragging: false };
+    pointer = { id: event.pointerId, type: event.pointerType, x: event.clientX, y: event.clientY, start: position, axis: event.pointerType === 'mouse' ? 'x' : null, lastDistance: 0, lastTime: performance.now(), velocity: 0, dragging: false };
     target = position;
   });
 
-  gestureArea.addEventListener('pointermove', event => {
+  window.addEventListener('pointermove', event => {
     if (!pointer || pointer.id !== event.pointerId) return;
+    if (pointer.type === 'mouse' && event.buttons === 0) {
+      release({ type: 'pointercancel', pointerId: pointer.id });
+      return;
+    }
     const dx = event.clientX - pointer.x;
     const dy = event.clientY - pointer.y;
     if (!pointer.dragging) {
@@ -254,6 +323,9 @@
     // Touch starts with implicit capture on the pressed disc. Its capture-loss
     // event bubbles when we transfer capture to the stage; the swipe is ongoing.
     if (event.type === 'lostpointercapture' && event.target !== stage) return;
+    // Keep tracking a held mouse across transient capture loss. The window
+    // move/up handlers (and blur recovery) still finish the gesture safely.
+    if (event.type === 'lostpointercapture' && pointer.type === 'mouse' && event.buttons) return;
     const wasDragging = pointer.dragging;
     const recent = performance.now() - pointer.lastTime < 100;
     const velocity = event.type === 'pointerup' && recent ? Math.max(-2, Math.min(2, pointer.velocity)) : 0;
@@ -285,19 +357,50 @@
     }
   });
 
-  gestureArea.addEventListener('wheel', event => {
-    if (event.ctrlKey || dragging()) return;
+  // Listen across the homepage, including the header. Dialogs keep native scroll.
+  window.addEventListener('wheel', event => {
+    if (event.ctrlKey || document.querySelector('dialog[open]')) return;
+    // A release outside the browser can leave an old press behind. Wheel events
+    // with no pressed mouse button recover without requiring pointer movement.
+    if (pointer && pointer.type === 'mouse' && event.buttons === 0) release({ type: 'pointercancel', pointerId: pointer.id });
+    if (pointer) return;
     let delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
     if (event.deltaMode === 1) delta *= 16;
     if (event.deltaMode === 2) delta *= stage.clientHeight;
-    if (!delta || (target <= 0 && delta < 0) || (target >= discs.length - 1 && delta > 0)) return;
+    if (!delta) return;
+    if ((target <= 0 && delta < 0) || (target >= discs.length - 1 && delta > 0)) {
+      resetWheelGesture();
+      requestRender();
+      return;
+    }
+    const now = performance.now();
+    const reversed = wheelGesture && Math.sign(delta) !== wheelGesture.direction && Math.abs(delta) >= 6;
+    if (!wheelGesture || now - wheelGesture.lastTime > 140 || reversed) {
+      wheelGesture = { lastTime: now, start: Math.round(target), delta: 0, direction: Math.sign(delta), active: true };
+    }
+    wheelGesture.lastTime = now;
     event.preventDefault();
-    target = clamp(target + delta / (step * 1.8));
-    requestRender();
-    clearTimeout(settleTimer);
-    settleTimer = setTimeout(() => goTo(target), 160);
+    wheelGesture.active = true;
+    clearTimeout(wheelEndTimer);
+    wheelEndTimer = setTimeout(() => {
+      if (wheelGesture) wheelGesture.active = false;
+      requestRender();
+    }, 140);
+    wheelGesture.delta += delta;
+    const distance = Math.abs(wheelGesture.delta);
+    if (distance < 2) return;
+    // A light flick always gets one CD. Greater travel (including momentum)
+    // earns further CDs without an artificial one-step cap or cooldown.
+    const count = 1 + Math.floor((distance - 2) / Math.max(200, step * 0.9));
+    const nextIndex = clamp(wheelGesture.start + Math.sign(wheelGesture.delta) * count);
+    if (nextIndex !== Math.round(target)) goTo(nextIndex, 140, true);
   }, { passive: false });
 
+  document.querySelectorAll('[data-dialog]').forEach(button => button.addEventListener('click', resetWheelGesture));
+  window.addEventListener('blur', () => {
+    resetWheelGesture();
+    if (pointer) release({ type: 'pointercancel', pointerId: pointer.id });
+  });
   window.addEventListener('resize', measure);
   reducedMotion.addEventListener('change', requestRender);
   // Restore the viewed project after returning from an internal case study.

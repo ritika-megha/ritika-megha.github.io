@@ -124,8 +124,9 @@ The About text reflects the owner's current focus: graphic design, textile roots
 
 - Finite carousel with no autoplay. Soft ratchet sounds accompany movement by default, with no sound toggle. Browser audio rules may require a first tap, swipe, or key press before playback.
 - Horizontal dragging and horizontal or vertical touch swipes browse the carousel. Swipe up/left for the next project and down/right for the previous one. Page scrolling remains normal outside the carousel and on case-study pages; pinch zoom stays available.
-- Wheel/trackpad navigation is limited to the carousel region and releases scrolling at its ends; browser zoom gestures are preserved.
+- A light wheel/trackpad flick moves one CD; longer gestures travel through multiple CDs in proportion to scroll distance. There is no gesture cooldown. Scrolling works across the homepage, including over the header; open dialogs keep native scrolling. Page scrolling releases at the carousel ends and browser zoom gestures are preserved.
 - Discs have wider spacing with a gentle forward/back depth tilt that settles to rest. Hover adds an opposing depth tilt to the hovered disc, then eases back on exit. Reduced motion removes easing and wobble. Keyboard arrow navigation and neighbor click-to-center remain available; visible arrows and drag instructions are omitted.
+- Settled project text fades upward and enters from below, with Discipline/Collection following 150 ms later over a roughly one-second text transition. Fast browsing coalesces to the final selection; reduced motion updates text immediately. The title and View project destination update together.
 - A project index and a no-JavaScript project list provide direct access to work.
 - Returning from an internal page restores the viewed project for the current tab where session storage is available.
 
