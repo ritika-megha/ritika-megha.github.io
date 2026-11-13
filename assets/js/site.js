@@ -79,10 +79,8 @@
   let wheelGesture = null;
   let wheelEndTimer;
   let announcementTimer;
-  let textTimer;
   let textVersion = 0;
   let displayedSelection = -1;
-  let textCandidate = -1;
   let textAnimations = [];
   let pointer = null;
   let suppressClickUntil = 0;
@@ -111,11 +109,10 @@
   const dragging = () => pointer && pointer.dragging;
 
   function cancelTextTransition() {
-    clearTimeout(textTimer);
     textVersion++;
-    textCandidate = -1;
     textAnimations.forEach(animation => animation.cancel());
     textAnimations = [];
+    title.style.removeProperty('overflow');
   }
 
   function applyProjectText(index) {
@@ -143,6 +140,8 @@
   }
 
   function updateSelection(index) {
+    if (index === selected && displayedSelection === index && !(reducedMotion.matches && textAnimations.length)) return;
+    const previousHeight = title.getBoundingClientRect().height;
     if (index !== selected) {
       selected = index;
       cancelTextTransition();
@@ -152,41 +151,36 @@
         else item.removeAttribute('aria-current');
       });
     }
-    if (displayedSelection < 0 || reducedMotion.matches || !title.animate) {
-      if (textCandidate !== -1) cancelTextTransition();
+    if (reducedMotion.matches || !title.animate) {
+      if (textAnimations.length) cancelTextTransition();
       if (displayedSelection !== index) applyProjectText(index);
       return;
     }
-    const settled = !dragging() && !(wheelGesture && wheelGesture.active) && Math.abs(position - index) < 0.05 && Math.abs(target - index) < 0.001;
-    if (!settled) {
-      if (textCandidate !== -1) cancelTextTransition();
-      return;
-    }
-    if (displayedSelection === index || textCandidate === index) return;
-    textCandidate = index;
-    const version = ++textVersion;
-    // Coalesce fast browsing; only the final settled project's text animates.
-    textTimer = setTimeout(async () => {
-      const elements = [title, category, collection];
-      textAnimations = elements.map((element, i) => element.animate([
-        { opacity: 1, transform: 'translateY(0)' },
-        { opacity: 0, transform: 'translateY(-8px)' }
-      ], { duration: i ? 200 : 250, delay: i ? 50 : 0, easing: 'ease-in', fill: 'forwards' }));
-      await Promise.allSettled(textAnimations.map(animation => animation.finished));
-      if (version !== textVersion) return;
-      // Update text and its destination together, while the text is hidden.
-      applyProjectText(index);
-      textAnimations.forEach(animation => animation.cancel());
-      textAnimations = elements.map((element, i) => element.animate([
-        { opacity: 0, transform: 'translateY(10px)' },
-        { opacity: 1, transform: 'translateY(0)' }
-      ], { duration: 600, delay: i ? 150 : 0, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'both' }));
-      await Promise.allSettled(textAnimations.map(animation => animation.finished));
+    if (displayedSelection === index) return;
+    const initial = displayedSelection < 0;
+    // Synchronize as soon as the centered CD changes, without waiting for
+    // momentum, a settle timer, or an outgoing animation to finish.
+    applyProjectText(index);
+    if (initial) return;
+    const nextHeight = title.getBoundingClientRect().height;
+    const resizeTitle = Math.abs(previousHeight - nextHeight) > 1;
+    if (resizeTitle) title.style.overflow = 'hidden';
+    const version = textVersion;
+    textAnimations = [title, category, collection].map((element, i) => {
+      const from = { opacity: 0.45, transform: `translateY(${i ? 2 : 4}px)` };
+      const to = { opacity: 1, transform: 'translateY(0)' };
+      if (i === 0 && resizeTitle) {
+        from.height = `${previousHeight}px`;
+        to.height = `${nextHeight}px`;
+      }
+      return element.animate([from, to], { duration: i ? 180 : 220, delay: i ? 25 : 0, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'both' });
+    });
+    Promise.allSettled(textAnimations.map(animation => animation.finished)).then(() => {
       if (version !== textVersion) return;
       textAnimations.forEach(animation => animation.cancel());
       textAnimations = [];
-      textCandidate = -1;
-    }, 60);
+      title.style.removeProperty('overflow');
+    });
   }
 
   function render() {
@@ -374,26 +368,33 @@
       return;
     }
     const now = performance.now();
+    const magnitude = Math.abs(delta);
     const reversed = wheelGesture && Math.sign(delta) !== wheelGesture.direction && Math.abs(delta) >= 6;
-    if (!wheelGesture || now - wheelGesture.lastTime > 140 || reversed) {
-      wheelGesture = { lastTime: now, start: Math.round(target), delta: 0, direction: Math.sign(delta), active: true };
+    // A new finger stroke can arrive before the previous momentum fully ends.
+    // Recognize a renewed impulse after decay, rather than swallowing it.
+    const renewed = wheelGesture && now - wheelGesture.startedAt >= 90 &&
+      (wheelGesture.lastMagnitude <= wheelGesture.peak * 0.4 || now - wheelGesture.lastTime >= 60) &&
+      magnitude >= Math.max(6, wheelGesture.lastMagnitude * 2.5);
+    if (!wheelGesture || now - wheelGesture.lastTime > 100 || reversed || renewed) {
+      wheelGesture = { lastTime: now, startedAt: now, lastMagnitude: magnitude, peak: magnitude, start: Math.round(target), delta: 0, direction: Math.sign(delta), active: true, consumed: false };
     }
     wheelGesture.lastTime = now;
+    wheelGesture.lastMagnitude = magnitude;
+    wheelGesture.peak = Math.max(wheelGesture.peak, magnitude);
     event.preventDefault();
     wheelGesture.active = true;
     clearTimeout(wheelEndTimer);
     wheelEndTimer = setTimeout(() => {
       if (wheelGesture) wheelGesture.active = false;
       requestRender();
-    }, 140);
+    }, 100);
+    if (wheelGesture.consumed) return;
     wheelGesture.delta += delta;
-    const distance = Math.abs(wheelGesture.delta);
-    if (distance < 2) return;
-    // A light flick always gets one CD. Greater travel (including momentum)
-    // earns further CDs without an artificial one-step cap or cooldown.
-    const count = 1 + Math.floor((distance - 2) / Math.max(200, step * 0.9));
-    const nextIndex = clamp(wheelGesture.start + Math.sign(wheelGesture.delta) * count);
-    if (nextIndex !== Math.round(target)) goTo(nextIndex, 140, true);
+    if (Math.abs(wheelGesture.delta) < 2) return;
+    // Consume the whole gesture, including momentum, as a single CD step.
+    // A new gesture after the quiet gap is immediately available (no cooldown).
+    wheelGesture.consumed = true;
+    goTo(wheelGesture.start + wheelGesture.direction, 140, true);
   }, { passive: false });
 
   document.querySelectorAll('[data-dialog]').forEach(button => button.addEventListener('click', resetWheelGesture));

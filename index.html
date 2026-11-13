@@ -40,13 +40,13 @@ body_class: portfolio
       <p class="sr-only" id="carousel-status" aria-live="polite" aria-atomic="true"></p>
     </div>
     <footer class="collection-footer">
+      <div class="footer-note"><span class="tiny-star" aria-hidden="true">✳</span><p>Art, design &<br>a little curiosity.</p></div>
+      {% include social-links.html %}
       <nav class="collection-controls" aria-label="Portfolio navigation">
         <a class="nav-work" href="{{ '/' | relative_url }}" aria-current="page">Selected work</a>
         <button type="button" data-dialog="index-dialog">Index</button>
         {% include theme-toggle.html %}
       </nav>
-      {% include social-links.html %}
-      <div class="footer-note"><span class="tiny-star" aria-hidden="true">✳</span><p>Art, design &<br>a little curiosity.</p></div>
       <span id="current-number" class="sr-only">01</span>
     </footer>
   </section>

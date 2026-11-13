@@ -146,7 +146,7 @@ check('Small metadata is semibold', "Number(getComputedStyle(document.querySelec
 check("Initial selection matches configured project order", f"document.querySelector('#project-title').textContent === {json.dumps(first_project)}")
 check("No visible arrow buttons or drag hint", "!document.querySelector('#previous-project, #next-project, .drag-hint')")
 check("About stays beside the wordmark and aligns with the table", "(() => {const logo=document.querySelector('.wordmark').getBoundingClientRect(), about=document.querySelector('[data-dialog=about-dialog]').getBoundingClientRect(), table=document.querySelector('.project-facts').getBoundingClientRect();return about.left > logo.right && Math.abs(about.right-table.right)<1;})()")
-check("Footer is anchored bottom-right in the requested order", "(() => {const footer=document.querySelector('.collection-footer'), r=footer.getBoundingClientRect();return getComputedStyle(footer).position === 'absolute' && Math.abs(innerHeight-r.bottom-28)<1 && footer.children[0].classList.contains('collection-controls') && footer.children[1].classList.contains('social-links') && footer.children[2].classList.contains('footer-note');})()")
+check("Footer is anchored bottom-right in the requested order", "(() => {const footer=document.querySelector('.collection-footer'), r=footer.getBoundingClientRect();return getComputedStyle(footer).position === 'absolute' && Math.abs(innerHeight-r.bottom-28)<1 && footer.children[0].classList.contains('footer-note') && footer.children[1].classList.contains('social-links') && footer.children[2].classList.contains('collection-controls');})()")
 check("Footer has no opaque background", "getComputedStyle(document.querySelector('.collection-footer')).backgroundColor === 'rgba(0, 0, 0, 0)'")
 check("Discs use the full canvas height", "document.querySelector('#carousel').getBoundingClientRect().height === document.querySelector('.collection').getBoundingClientRect().height")
 check("Selected destination matches project configuration", "(() => {const disc=document.querySelector('.disc[aria-current]'), link=document.querySelector('#open-project'); return link.href === disc.href && (disc.dataset.destination === 'internal' ? !link.hasAttribute('target') : link.target === '_blank');})()")
@@ -185,15 +185,22 @@ long_start = browser.evaluate("Number(document.querySelector('#current-number').
 for delta in [100] * 10 + [30, 20, 10, 5]:
     browser.call('Input.dispatchMouseEvent', {'type':'mouseWheel', 'x':720, 'y':450, 'deltaX':0, 'deltaY':delta})
     time.sleep(0.03)
-browser.wait(f"Number(document.querySelector('#current-number').textContent) >= {long_start + 2}")
+    assert browser.evaluate("(() => {const disc=document.querySelector('.disc[aria-current]'); return document.querySelector('#project-title').textContent === disc.dataset.title && document.querySelector('#open-project').href === disc.href;})()"), 'Project text or link lagged behind the centered CD during momentum.'
+checks.append("Text and link track the centered CD during momentum")
+browser.wait(f"Number(document.querySelector('#current-number').textContent) === {long_start + 1}")
 browser.wait("document.querySelector('#project-title').getAnimations().length === 0 && document.querySelector('#project-category').getAnimations().length === 0")
-check("Long scroll travels through multiple CDs", f"Number(document.querySelector('#current-number').textContent) >= {long_start + 2}")
+check("Long wheel gesture and momentum still advance only one CD", f"Number(document.querySelector('#current-number').textContent) === {long_start + 1}")
+rapid_start = browser.evaluate("Number(document.querySelector('#current-number').textContent)")
+browser.evaluate("(async()=>{const send=d=>document.querySelector('#carousel').dispatchEvent(new WheelEvent('wheel',{deltaY:d,bubbles:true,cancelable:true}));for(let burst=0;burst<3;burst++){for(const d of [30,20,10,4]){send(d);await new Promise(r=>setTimeout(r,12));}await new Promise(r=>setTimeout(r,70));}})()")
+browser.wait(f"Number(document.querySelector('#current-number').textContent) === {rapid_start + 3}")
+checks.append("Three rapid separate swipes advance three CDs")
 reverse_start = browser.evaluate("Number(document.querySelector('#current-number').textContent)")
 browser.call('Input.dispatchMouseEvent', {'type':'mouseWheel', 'x':720, 'y':450, 'deltaX':-8, 'deltaY':0})
 browser.wait(f"Number(document.querySelector('#current-number').textContent) === {reverse_start - 1}")
 checks.append("Short horizontal reverse gesture moves back one CD")
 header_box = browser.evaluate("document.querySelector('[data-dialog=about-dialog]').getBoundingClientRect().toJSON()")
 for expected in (reverse_start, reverse_start + 1):
+    time.sleep(0.18)  # Lift between two distinct wheel gestures.
     browser.call('Input.dispatchMouseEvent', {'type':'mouseWheel', 'x':header_box['x'] + header_box['width']/2, 'y':header_box['y'] + header_box['height']/2, 'deltaX':0, 'deltaY':4})
     browser.wait(f"Number(document.querySelector('#current-number').textContent) === {expected}")
 checks.append("Stationary header responds to successive light flicks")
