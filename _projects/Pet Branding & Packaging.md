@@ -12,3 +12,5 @@ published: true
 behance_sync: true
 disc_artwork: /assets/images/shifted-label-dog-food-pouch-4.png
 ---
+![](/assets/images/content/barkbowl-veggie-feast-in-the-garden.png)
+
