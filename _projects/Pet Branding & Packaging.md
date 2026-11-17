@@ -14,3 +14,5 @@ disc_artwork: /assets/images/shifted-label-dog-food-pouch-4.png
 ---
 ![](/assets/images/content/barkbowl-veggie-feast-in-the-garden.png)
 
+![](/assets/images/content/barkbowl-veggie-feast-pouch-lineup.png)
+
