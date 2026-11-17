@@ -4,7 +4,7 @@ category: Branding
 collection: Graphic Design
 cover: /assets/images/light-green-and-white-palyful-illustrative-milk-pouch-packaging-label-2-2.jpg
 image_alt: Chews Wisely is a Dog Food brand for vegetarian option for users.
-focal_point: 100% 50%
+focal_point: 0% 40%
 destination: auto
 order: 1
 visible: true
